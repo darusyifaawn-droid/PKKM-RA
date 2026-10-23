@@ -1,10 +1,41 @@
+export interface SocialMediaInfo {
+  instagram: string;
+  youtube: string;
+  facebook: string;
+  tiktok: string;
+  website: string;
+  whatsapp: string;
+  email: string;
+}
+
+export interface AccreditationDetail {
+  peringkat: string; // 'A (Unggul)' | 'B (Baik)' | 'C (Cukup)' | 'Terakreditasi B'
+  nilaiAngka: string | number; // e.g. '86'
+  nomorSk: string; // e.g. '051/BAN-SM/SK/2024'
+  lembagaAkreditasi: string; // 'BAN-PDM / BAN-S/M'
+  tahunAkreditasi: string; // '2024'
+  masaBerlaku: string; // '2024 s/d 2029'
+  sertifikatUrl: string; // Scan file / photo URL
+}
+
+export interface FeaturedProgram {
+  id: string;
+  nama: string;
+  deskripsi: string;
+  kategori?: string;
+  iconName?: string;
+}
+
 export interface InstitutionProfile {
   namaLembaga: string;
+  nama?: string;
   status: string; // 'Negeri' | 'Swasta'
   nsm: string;
   npsm: string;
+  npsn?: string;
   akreditasi: string;
   alamat: string;
+  desaKelurahan?: string;
   kecamatan: string;
   kotaKab: string;
   provinsi: string;
@@ -16,6 +47,19 @@ export interface InstitutionProfile {
   statusTanah: string;
   logoUrl: string;
   fotoMadrasahUrl: string;
+  fotoBersamaUrl?: string;
+  visi?: string;
+  misi?: string[];
+  motto?: string;
+  sambutanKepala?: string;
+  socialMedia?: SocialMediaInfo;
+  accreditationDetail?: AccreditationDetail;
+  featuredPrograms?: FeaturedProgram[];
+  websiteScreenshotUrl?: string;
+  portalSiswaScreenshotUrl?: string;
+  kaldikUrl?: string;
+  kaldikTahun?: string;
+  emisSimpatikaScreenshotUrl?: string;
 }
 
 export interface PrincipalProfile {
@@ -23,6 +67,7 @@ export interface PrincipalProfile {
   gelar: string;
   nip: string;
   pangkatGol: string;
+  pangkatGolongan?: string;
   nuptk: string;
   npk: string;
   tempatTanggalLahir: string;
@@ -101,10 +146,13 @@ export interface ParentDemographics {
 export interface BuildingCondition {
   id: string;
   jenisBangunan: string;
+  jenisRuang?: string;
   jumlahLokal: number;
   baik: number;
   rusakRingan: number;
   rusakBerat: number;
+  fotoUrl?: string;
+  keterangan?: string;
 }
 
 export interface FacilityInventory {
@@ -114,6 +162,8 @@ export interface FacilityInventory {
   rusakRingan: number;
   rusakBerat: number;
   jumlah: number;
+  fotoUrl?: string;
+  kategori?: 'APE Indoor' | 'APE Outdoor' | 'Kelas' | 'IT / Media' | 'Umum';
 }
 
 export interface ProgramGoal {
@@ -147,11 +197,13 @@ export interface ActivityReports {
 
 export interface PhotoEvidenceItem {
   id: string;
-  kategori: 'Fasilitas Madrasah' | 'Program Unggulan' | 'Ekstrakurikuler' | 'Prestasi Madrasah' | 'Supervisi & Manajerial' | 'Lainnya';
+  kategori: 'Fasilitas Madrasah' | 'Program Unggulan' | 'Ekstrakurikuler' | 'Prestasi Madrasah' | 'Supervisi & Manajerial' | 'Lainnya' | string;
   judul: string;
   deskripsi: string;
   tanggal?: string;
   fotoUrl: string;
+  url?: string;
+  komponenKey?: string;
 }
 
 export interface AssessmentIndicator {
@@ -165,11 +217,62 @@ export interface AssessmentIndicator {
   catatanPenilai: string;
 }
 
+export interface StructuralPosition {
+  id: string;
+  jabatan: string;
+  nama: string;
+  tingkat: 'Pimpinan' | 'Manajemen' | 'Seksi' | 'Guru' | 'Staf/Layanan';
+  keterangan?: string;
+  urutan?: number;
+}
+
+export interface KomponenDetail {
+  kode: string;
+  namaKomponen: string;
+  judulSlide: string;
+  deskripsi: string;
+  poinPencapaian: string[];
+  fotoUrl?: string;
+  fotoKeterangan?: string;
+  subBukti?: { label: string; keterangan: string }[];
+}
+
+export interface SwotRtlItem {
+  fokusProgram: string;
+  langkahKonkret: string;
+  targetWaktu: string;
+  penanggungJawab: string;
+}
+
+export interface SwotRtlDetail {
+  kekuatan: string[];
+  kelemahanKendala: string[];
+  kelemahan?: string[];
+  peluang: string[];
+  ancaman?: string[];
+  rencanaTindakLanjut: (string | SwotRtlItem)[];
+  fotoUrl?: string;
+}
+
+export interface KomponenAchievements {
+  komponenA: KomponenDetail; // Usaha Pengembangan RA / Madrasah
+  komponenB: KomponenDetail; // Pelaksanaan Tugas Manajerial & Kurikulum / Kaldik
+  komponenC: KomponenDetail; // Kewirausahaan & Inovasi (Tahfidz, P5-RA, MoU)
+  komponenD: KomponenDetail; // Supervisi Guru & Tendik
+  komponenE: KomponenDetail; // Hasil Kinerja & Prestasi
+  swotRtl: SwotRtlDetail;
+  prestasiList?: { namaPrestasi: string; tingkat: string; tahun: string; peraih: string }[];
+  closingStatement?: string;
+  fotoPenutupUrl?: string;
+  kalimatPenutup?: string;
+}
+
 export interface PpkmData {
   institution: InstitutionProfile;
   principal: PrincipalProfile;
   evaluators: EvaluatorProfile;
   ptkList: PtkItem[];
+  structuralPositions: StructuralPosition[];
   students: StudentClassData[];
   studentTrends: StudentTrendData[];
   graduates: GraduateData[];
@@ -180,12 +283,19 @@ export interface PpkmData {
   activityReports: ActivityReports;
   photoEvidences: PhotoEvidenceItem[];
   assessmentScores: AssessmentIndicator[];
+  manualScoreOverride?: number; // Optional manual override for Nilai Kinerja (NK)
+  komponenAchievements?: KomponenAchievements;
 }
+
+export type PkkmData = PpkmData;
 
 export type PrintCategory = 
   | 'all'
   | 'cover'
   | 'profile'
+  | 'accreditation'
+  | 'kaldik'
+  | 'digital'
   | 'ptk'
   | 'students_sarpras'
   | 'programs'

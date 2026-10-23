@@ -43,10 +43,11 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
   const totalP = students.reduce((acc, curr) => acc + (Number(curr.perempuan) || 0), 0);
   const totalStudents = totalL + totalP;
 
-  // Score calculations
-  const totalScore = assessmentScores.reduce((acc, curr) => acc + (curr.skor || 0), 0);
+  // Score calculations (supports manual typed override or dynamic auto-calculation)
+  const totalScore = assessmentScores.reduce((acc, curr) => acc + (Number(curr.skor) || 0), 0);
   const avgScore = assessmentScores.length > 0 ? totalScore / assessmentScores.length : 0;
-  const finalScore100 = (avgScore / 4) * 100;
+  const calculatedScore100 = (avgScore / 4) * 100;
+  const finalScore100 = data.manualScoreOverride !== undefined ? data.manualScoreOverride : calculatedScore100;
 
   let predicate = 'Baik';
   if (finalScore100 >= 91) predicate = 'Amat Baik (A)';
@@ -54,6 +55,15 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
   else if (finalScore100 >= 61) predicate = 'Cukup (C)';
   else if (finalScore100 >= 51) predicate = 'Sedang (D)';
   else predicate = 'Kurang (E)';
+
+  // Dynamic Structural Positions from user input
+  const structural = data.structuralPositions || [];
+  const komitePos = structural.find(p => p.jabatan.toLowerCase().includes('komite'))?.nama || evaluators.komiteNama;
+  const kepalaPos = structural.find(p => p.jabatan.toLowerCase().includes('kepala'))?.nama || principal.namaLengkap;
+  const pengawasPos = structural.find(p => p.jabatan.toLowerCase().includes('pengawas'))?.nama || evaluators.pengawas1Nama;
+  const tuPos = structural.find(p => p.jabatan.toLowerCase().includes('tata usaha') || p.jabatan.toLowerCase().includes('tu'))?.nama || 'Mufroni, S.Pd';
+  const bendaharaPos = structural.find(p => p.jabatan.toLowerCase().includes('bendahara'))?.nama || 'Rini Ariyani, S.Pd';
+  const seksiList = structural.filter(p => p.tingkat === 'Seksi');
 
   // Helper to chunk photo items for exact pagination
   const chunkSize = photoLayout === '2_per_page' ? 2 : 4;
@@ -94,12 +104,15 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                 <option value="all">📦 Semua Dokumen (Bundel Lengkap Siap Jilid A4)</option>
                 <option value="cover">1. Sampul / Cover Dokumen Resmi</option>
                 <option value="profile">2. Lembar Pengesahan & Profil Lembaga/Kepala</option>
-                <option value="ptk">3. Struktur Organisasi & Profil 17 PTK Guru</option>
-                <option value="students_sarpras">4. Data Siswa, Kelulusan & Sarpras</option>
-                <option value="programs">5. Program Kerja 4 Tahunan & Visi Misi</option>
-                <option value="activities">6. Laporan Program Kerja & Kendala</option>
-                <option value="photos">7. Album Foto Bukti Fisik Kegiatan</option>
-                <option value="assessment">8. Lembar Instrumen & Rekapitulasi Skor</option>
+                <option value="accreditation">3. Lampiran Sertifikat Akreditasi & Legalitas</option>
+                <option value="ptk">4. Struktur Organisasi & Profil 17 PTK Guru</option>
+                <option value="students_sarpras">5. Data Siswa, Kelulusan & Sarpras</option>
+                <option value="programs">6. Program Kerja 4 Tahunan & Visi Misi</option>
+                <option value="activities">7. Laporan Program Kerja & Kendala</option>
+                <option value="photos">8. Album Foto Bukti Fisik Kegiatan</option>
+                <option value="assessment">9. Lembar Instrumen & Rekapitulasi Skor</option>
+                <option value="kaldik">10. Lampiran Kalender Pendidikan (KALDIK)</option>
+                <option value="digital">11. Lampiran Digital (Website, Portal & EMIS)</option>
               </select>
             </div>
           </div>
@@ -171,7 +184,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
 
                 <div className="space-y-0.5 pt-1">
                   <h1 className="text-sm sm:text-base font-extrabold uppercase tracking-wide text-emerald-950">
-                    LAPORAN PENILAIAN KINERJA KEPALA MADRASAH (PPKM)
+                    LAPORAN PENILAIAN KINERJA KEPALA MADRASAH (PKKM)
                   </h1>
                   <p className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                     {institution.periodePenilaian}
@@ -290,13 +303,13 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                   LEMBAR PENGESAHAN HASIL PENILAIAN
                 </h2>
                 <p className="text-[11px] text-black mt-1 font-semibold">
-                  PENILAIAN KINERJA KEPALA MADRASAH (PPKM)
+                  PENILAIAN KINERJA KEPALA MADRASAH (PKKM)
                 </p>
               </div>
 
               <div className="text-xs text-black leading-relaxed space-y-2.5">
                 <p>
-                  Laporan dan Portofolio Penilaian Kinerja Kepala Madrasah (PPKM) pada satuan pendidikan:
+                  Laporan dan Portofolio Penilaian Kinerja Kepala Madrasah (PKKM) pada satuan pendidikan:
                 </p>
                 
                 <table className="w-full my-2 border-none text-xs">
@@ -329,7 +342,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                 </table>
 
                 <p className="text-justify leading-relaxed">
-                  Telah diperiksa, diverifikasi, dan dinilai secara sah oleh Tim Penilai Pengawas Madrasah Pembina sesuai dengan Petunjuk Teknis Penilaian Kinerja Kepala Madrasah Direktorat Jenderal Pendidikan Islam Kementerian Agama Republik Indonesia.
+                  Telah diperiksa, diverifikasi, dan dinilai secara sah oleh Tim Penilai Pengawas Madrasah Pembina sesuai dengan Petunjuk Teknis Penilaian Kinerja Kepala Madrasah (PKKM) Direktorat Jenderal Pendidikan Islam Kementerian Agama Republik Indonesia.
                 </p>
               </div>
             </div>
@@ -467,7 +480,11 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                   </tr>
                   <tr className="border-b border-slate-100">
                     <td className="py-1 font-semibold text-slate-700">4. Peringkat Akreditasi</td>
-                    <td className="py-1 font-semibold text-emerald-800">: {institution.akreditasi}</td>
+                    <td className="py-1 font-semibold text-emerald-800">
+                      : {institution.accreditationDetail?.peringkat || institution.akreditasi} 
+                      {institution.accreditationDetail?.nilaiAngka ? ` (Nilai: ${institution.accreditationDetail.nilaiAngka})` : ''}
+                      {institution.accreditationDetail?.nomorSk ? ` · No. SK: ${institution.accreditationDetail.nomorSk}` : ''}
+                    </td>
                   </tr>
                   <tr className="border-b border-slate-100">
                     <td className="py-1 font-semibold text-slate-700">5. Alamat Lengkap</td>
@@ -478,11 +495,17 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                     <td className="py-1 font-mono text-slate-800">: Telp: {institution.telepon} · {institution.email}</td>
                   </tr>
                   <tr className="border-b border-slate-100">
-                    <td className="py-1 font-semibold text-slate-700">7. Luas Tanah Seluruhnya</td>
+                    <td className="py-1 font-semibold text-slate-700">7. Saluran Media Sosial</td>
+                    <td className="py-1 text-slate-800">
+                      : IG: {institution.socialMedia?.instagram || '-'} · YT: {institution.socialMedia?.youtube || '-'} · Web: {institution.socialMedia?.website || '-'}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-slate-100">
+                    <td className="py-1 font-semibold text-slate-700">8. Luas Tanah Seluruhnya</td>
                     <td className="py-1 text-slate-800">: {institution.luasTanah}</td>
                   </tr>
                   <tr>
-                    <td className="py-1 font-semibold text-slate-700">8. Status Tanah</td>
+                    <td className="py-1 font-semibold text-slate-700">9. Status Tanah</td>
                     <td className="py-1 text-slate-800">: {institution.statusTanah}</td>
                   </tr>
                 </tbody>
@@ -506,6 +529,55 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
         )}
 
         {/* ============================================================== */}
+        {/* 3.B. LAMPIRAN SERTIFIKAT AKREDITASI & DOKUMEN LEGALITAS        */}
+        {/* ============================================================== */}
+        {(selectedCategory === 'all' || selectedCategory === 'accreditation') && (
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4">
+            <div className="border-b-2 border-emerald-950 pb-1.5 mb-2">
+              <h2 className="text-xs font-bold uppercase text-emerald-950 tracking-wider">
+                LAMPIRAN DOKUMEN: SERTIFIKAT AKREDITASI SATUAN PENDIDIKAN
+              </h2>
+            </div>
+
+            {/* Frame Sertifikat Scan */}
+            <div className="border-2 border-emerald-900 p-2 bg-slate-50 text-center rounded-sm">
+              <p className="text-[11px] font-bold text-emerald-950 uppercase mb-2">
+                BADAN AKREDITASI NASIONAL SEKOLAH/MADRASAH (BAN-S/M / BAN-PDM)
+              </p>
+              <div className="h-[148mm] w-full flex items-center justify-center overflow-hidden border border-slate-300 bg-white p-2">
+                <img
+                  src={institution.accreditationDetail?.sertifikatUrl || '/src/assets/images/sertifikat_akreditasi_1792427208613.jpg'}
+                  alt="Sertifikat Akreditasi"
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Rincian SK & Legalitas */}
+            <div className="border border-slate-300 p-3 bg-white text-[11px]">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="font-semibold text-slate-700">Status Akreditasi: </span>
+                  <strong className="text-emerald-900">{institution.accreditationDetail?.peringkat || institution.akreditasi}</strong>
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-700">Nilai / Skor Angka: </span>
+                  <strong className="font-mono">{institution.accreditationDetail?.nilaiAngka || '86'}</strong>
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-700">Nomor Sertifikat/SK: </span>
+                  <span className="font-mono">{institution.accreditationDetail?.nomorSk || '051/BAN-SM/SK/2024'}</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-700">Masa Berlaku: </span>
+                  <span>{institution.accreditationDetail?.masaBerlaku || '2024 s/d 2029'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
         {/* 4. STRUKTUR ORGANISASI & PROFIL 17 PTK GURU / TENDIK           */}
         {/* ============================================================== */}
         {(selectedCategory === 'all' || selectedCategory === 'ptk') && (
@@ -516,46 +588,60 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
               </h2>
             </div>
 
-            {/* Bagan Struktur Organisasi Ringkas */}
+            {/* Bagan Struktur Organisasi Dinamis */}
             <div className="border border-slate-300 p-2.5 bg-slate-50/50">
               <h3 className="text-[10px] font-bold uppercase text-slate-900 text-center mb-1.5">
                 BAGAN STRUKTUR ORGANISASI {institution.namaLembaga}
               </h3>
               
               <div className="flex flex-col items-center text-[10px] space-y-1">
+                {/* Level Pimpinan */}
                 <div className="flex items-center gap-3">
                   <div className="border border-slate-400 bg-white px-2 py-0.5 rounded-xs text-center shadow-xs">
-                    <span className="block text-[8px] text-slate-500">KOMITE</span>
-                    <strong>{evaluators.komiteNama}</strong>
+                    <span className="block text-[8px] text-slate-500 uppercase">KOMITE MADRASAH</span>
+                    <strong>{komitePos}</strong>
                   </div>
                   <div className="border-2 border-emerald-800 bg-emerald-50 px-3 py-1 rounded-xs text-center shadow-xs">
-                    <span className="block text-[8px] text-emerald-800 font-semibold">KEPALA MADRASAH</span>
-                    <strong className="text-emerald-950">{principal.namaLengkap}</strong>
+                    <span className="block text-[8px] text-emerald-800 font-semibold uppercase">KEPALA MADRASAH</span>
+                    <strong className="text-emerald-950">{kepalaPos}</strong>
                   </div>
                   <div className="border border-slate-400 bg-white px-2 py-0.5 rounded-xs text-center shadow-xs">
-                    <span className="block text-[8px] text-slate-500">PENGAWAS</span>
-                    <strong>{evaluators.pengawas1Nama}</strong>
+                    <span className="block text-[8px] text-slate-500 uppercase">PENGAWAS PEMBINA</span>
+                    <strong>{pengawasPos}</strong>
                   </div>
                 </div>
 
                 <div className="w-px h-2 bg-slate-400" />
 
+                {/* Level Manajemen (TU & Bendahara) */}
                 <div className="flex items-center gap-3 text-[9px]">
                   <div className="border border-slate-300 bg-white px-2 py-0.5 text-center">
-                    <span className="block text-[8px] text-slate-500">KEPALA TU</span>
-                    <strong>Mufroni, S.Pd</strong>
+                    <span className="block text-[8px] text-slate-500 uppercase">TATA USAHA (TU)</span>
+                    <strong>{tuPos}</strong>
                   </div>
                   <div className="border border-slate-300 bg-white px-2 py-0.5 text-center">
-                    <span className="block text-[8px] text-slate-500">BENDAHARA</span>
-                    <strong>Rini Ariyani, S.Pd</strong>
+                    <span className="block text-[8px] text-slate-500 uppercase">BENDAHARA</span>
+                    <strong>{bendaharaPos}</strong>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-1 text-center text-[8.5px] w-full max-w-md pt-0.5">
-                  <div className="border border-slate-300 bg-white p-0.5">Kurikulum: <strong>H. Bahjatul W</strong></div>
-                  <div className="border border-slate-300 bg-white p-0.5">Kesiswaan: <strong>Khairun Nisa</strong></div>
-                  <div className="border border-slate-300 bg-white p-0.5">Humas: <strong>Wahyu R</strong></div>
-                  <div className="border border-slate-300 bg-white p-0.5">Sarpras: <strong>Moh. Royano</strong></div>
+                {/* Level Seksi (Dinamis dari structuralPositions) */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-center text-[8.5px] w-full max-w-lg pt-0.5">
+                  {seksiList.length > 0 ? (
+                    seksiList.map((s) => (
+                      <div key={s.id} className="border border-slate-300 bg-white p-0.5 rounded-xs">
+                        <span className="text-slate-500 block truncate">{s.jabatan}</span>
+                        <strong className="text-slate-900 truncate block">{s.nama}</strong>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div className="border border-slate-300 bg-white p-0.5">Kurikulum: <strong>H. Bahjatul W</strong></div>
+                      <div className="border border-slate-300 bg-white p-0.5">Kesiswaan: <strong>Khairun Nisa</strong></div>
+                      <div className="border border-slate-300 bg-white p-0.5">Humas: <strong>Wahyu R</strong></div>
+                      <div className="border border-slate-300 bg-white p-0.5">Sarpras: <strong>Moh. Royano</strong></div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -772,6 +858,28 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                   ))}
                 </tbody>
               </table>
+
+              {/* Foto Dokumentasi Sarana & Fasilitas APE */}
+              <div className="pt-2 border-t border-slate-200 avoid-break">
+                <h4 className="text-[9.5px] font-bold uppercase text-slate-800 mb-1.5 flex items-center justify-between">
+                  <span>Dokumentasi Fisik Sarana Prasarana & APE Unggulan:</span>
+                  <span className="text-[8px] text-emerald-800 font-semibold font-mono">Standar Layanan PAUD/RA Terintegrasi</span>
+                </h4>
+                <div className="grid grid-cols-3 gap-2">
+                  {(inventory.filter(i => i.fotoUrl).length > 0 ? inventory.filter(i => i.fotoUrl).slice(0, 3) : [
+                    { namaBarang: 'Arena Bermain APE Outdoor Ramah Anak', fotoUrl: '/src/assets/images/sarpras_ape_bermain_1792723675926.jpg' },
+                    { namaBarang: 'Gedung & Halaman Madrasah', fotoUrl: institution.fotoMadrasahUrl },
+                    { namaBarang: 'Sentra Balok & Kreativitas Anak', fotoUrl: '/src/assets/images/foto_kegiatan_1_1792427218693.jpg' }
+                  ]).map((item, idx) => (
+                    <div key={idx} className="border border-slate-300 p-1 bg-slate-50 text-center rounded-xs">
+                      <div className="h-16 w-full overflow-hidden bg-white mb-1 border border-slate-200">
+                        <img src={item.fotoUrl} alt={item.namaBarang} className="w-full h-full object-cover" />
+                      </div>
+                      <span className="text-[8px] font-semibold text-slate-800 block truncate leading-tight">{item.namaBarang}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1108,7 +1216,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
               {/* Verifikasi Lembar Foto di Bawah */}
               <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500 avoid-break">
                 <span>Dokumentasi Resmi Portofolio Kinerja Kepala Madrasah</span>
-                <span className="italic">Diverifikasi oleh Tim Penilai PPKM Kemenag RI</span>
+                <span className="italic">Diverifikasi oleh Tim Penilai PKKM Kemenag RI</span>
               </div>
             </div>
           ))
@@ -1121,7 +1229,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
           <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4">
             <div className="border-b-2 border-emerald-950 pb-1 mb-2">
               <h2 className="text-xs font-bold uppercase text-emerald-950 tracking-wider">
-                BAGIAN VII: INSTRUMEN & REKAPITULASI NILAI KINERJA KEPALA MADRASAH
+                BAGIAN VII: INSTRUMEN & REKAPITULASI NILAI KINERJA KEPALA MADRASAH (PKKM)
               </h2>
             </div>
 
@@ -1132,7 +1240,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                   NILAI AKHIR KINERJA KEPALA MADRASAH (NK)
                 </span>
                 <p className="text-[10px] text-slate-600 mt-0.5">
-                  Berdasarkan penilaian 5 komponen Keputusan Dirjen Pendis Kemenag RI.
+                  Berdasarkan penilaian 5 komponen Keputusan Dirjen Pendis Kemenag RI tentang PKKM.
                 </p>
               </div>
 
@@ -1148,7 +1256,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
 
                 <div>
                   <span className="text-[9px] text-slate-500 uppercase block font-semibold">Predikat</span>
-                  <div className="text-xs font-black text-emerald-900 uppercase">
+                  <div className="text-xs font-black text-emerald-950 uppercase">
                     {predicate}
                   </div>
                 </div>
@@ -1158,7 +1266,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
             {/* Tabel Butir Instrumen */}
             <div>
               <h3 className="text-[10px] font-bold uppercase text-slate-900 mb-1">
-                Rincian Skor per Butir Indikator Kinerja PPKM Kemenag
+                Rincian Skor per Butir Indikator Kinerja PKKM Kemenag
               </h3>
 
               <table className="w-full text-[8.5px] border border-slate-400 border-collapse">
@@ -1219,6 +1327,211 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* 10. LAMPIRAN KALENDER PENDIDIKAN (KALDIK)                      */}
+        {/* ============================================================== */}
+        {(selectedCategory === 'all' || selectedCategory === 'kaldik') && (
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4">
+            <div className="border-b-2 border-emerald-950 pb-1 mb-2 flex items-center justify-between">
+              <div>
+                <h2 className="text-xs font-bold uppercase text-emerald-950 tracking-wider">
+                  LAMPIRAN VIII: KALENDER PENDIDIKAN (KALDIK) RESMI MADRASAH
+                </h2>
+                <p className="text-[10px] text-slate-600">
+                  Pedoman Alokasi Waktu Pembelajaran & Kegiatan Tematik Tahun Pelajaran {institution.kaldikTahun || institution.tahunPelajaran}
+                </p>
+              </div>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-xs bg-emerald-100 text-emerald-900 border border-emerald-300">
+                KOM / Kurikulum Merdeka
+              </span>
+            </div>
+
+            {/* Kaldik Info Banner */}
+            <div className="grid grid-cols-3 gap-2 bg-slate-50 border border-slate-300 p-2 text-center text-[9.5px]">
+              <div>
+                <span className="text-slate-500 block text-[8.5px]">Semester Gasal</span>
+                <strong className="text-slate-900 font-bold">19 Minggu Efektif (108 Hari)</strong>
+              </div>
+              <div className="border-x border-slate-300">
+                <span className="text-slate-500 block text-[8.5px]">Semester Genap</span>
+                <strong className="text-slate-900 font-bold">18 Minggu Efektif (102 Hari)</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[8.5px]">Kegiatan Unggulan</span>
+                <strong className="text-emerald-900 font-bold">P5-RA, Manasik Cilik & Wisuda</strong>
+              </div>
+            </div>
+
+            {/* Full Kaldik Image Frame */}
+            <div className="border-2 border-slate-400 p-2 bg-slate-100/50 rounded-xs flex flex-col items-center">
+              <div className="w-full max-h-[500px] overflow-hidden bg-white border border-slate-300 shadow-xs flex items-center justify-center">
+                <img
+                  src={institution.kaldikUrl || '/src/assets/images/kaldik_madrasah_ra_1792723659933.jpg'}
+                  alt="Kalender Pendidikan Resmi RA"
+                  className="w-full h-auto max-h-[490px] object-contain"
+                />
+              </div>
+              <span className="text-[8.5px] text-slate-600 mt-1 italic">
+                *Dokumen Kalender Pendidikan telah disahkan oleh Penyelenggara Yayasan dan diselaraskan dengan Kalender Pendidikan Kemenag RI.
+              </span>
+            </div>
+
+            {/* Tanda Tangan Pengesahan */}
+            <div className="pt-2 text-[10px] text-black avoid-break">
+              <div className="text-right mb-2">
+                <p>{evaluators.tempatPenilaian}, {evaluators.tanggalPenilaian}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6 text-center">
+                <div>
+                  <p className="font-semibold">Mengetahui, Ketua Komite RA</p>
+                  <div className="h-12" />
+                  <p className="font-bold underline">{evaluators.komiteNama}</p>
+                  <p className="font-mono text-[9px]">Ketua Komite Madrasah</p>
+                </div>
+
+                <div>
+                  <p className="font-semibold">Kepala Raudlatul Athfal,</p>
+                  <div className="h-12" />
+                  <p className="font-bold underline">{principal.namaLengkap}</p>
+                  <p className="font-mono text-[9px]">NIP. {principal.nip}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* 11. LAMPIRAN DIGITAL (WEBSITE, PORTAL SISWA & SIMPATIKA/EMIS)  */}
+        {/* ============================================================== */}
+        {(selectedCategory === 'all' || selectedCategory === 'digital') && (
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4">
+            <div className="border-b-2 border-emerald-950 pb-1 mb-2 flex items-center justify-between">
+              <div>
+                <h2 className="text-xs font-bold uppercase text-emerald-950 tracking-wider">
+                  LAMPIRAN IX: PEMANFAATAN SISTEM INFORMASI & TEKNOLOGI DIGITAL (TIK)
+                </h2>
+                <p className="text-[10px] text-slate-600">
+                  Bukti Fisik Komponen A.4: Digitalisasi Tata Kelola, Media Publikasi & Portal Kemitraan Orang Tua
+                </p>
+              </div>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-xs bg-emerald-100 text-emerald-900 border border-emerald-300">
+                Komponen A (TIK)
+              </span>
+            </div>
+
+            {/* Dua Tangkapan Layar Berdampingan */}
+            <div className="grid grid-cols-2 gap-3">
+              
+              {/* Beranda Website Resmi */}
+              <div className="border border-slate-300 p-2.5 bg-slate-50/70">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-200 mb-1.5">
+                  <span className="font-bold text-[10px] text-slate-900">1. Website Resmi RA / Madrasah</span>
+                  <span className="text-[8px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded-xs">Aktif Online</span>
+                </div>
+                <div className="h-44 w-full border border-slate-300 overflow-hidden bg-white mb-2">
+                  <img
+                    src={institution.websiteScreenshotUrl || '/src/assets/images/beranda_website_ra_1792723631190.jpg'}
+                    alt="Beranda Website Resmi"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="text-[9px] text-slate-700 space-y-0.5">
+                  <p><strong>Alamat Web:</strong> <span className="font-mono text-emerald-800">{institution.socialMedia?.website || 'https://ra-alkhoiriyah.sch.id'}</span></p>
+                  <p><strong>Fungsi:</strong> Sarana informasi PPDB Online, profil lembaga, kalender kegiatan & berita madrasah terpadu.</p>
+                </div>
+              </div>
+
+              {/* Portal Siswa & Wali Murid */}
+              <div className="border border-slate-300 p-2.5 bg-slate-50/70">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-200 mb-1.5">
+                  <span className="font-bold text-[10px] text-slate-900">2. Portal Siswa & Wali Murid</span>
+                  <span className="text-[8px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.2 rounded-xs">Terintegrasi</span>
+                </div>
+                <div className="h-44 w-full border border-slate-300 overflow-hidden bg-white mb-2">
+                  <img
+                    src={institution.portalSiswaScreenshotUrl || '/src/assets/images/portal_siswa_ra_1792723646007.jpg'}
+                    alt="Portal Siswa & Orang Tua"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="text-[9px] text-slate-700 space-y-0.5">
+                  <p><strong>Akses Layanan:</strong> Portal Siswa & Komunikasi Wali Murid</p>
+                  <p><strong>Fungsi:</strong> Buku penghubung digital, absensi kehadiran anak harian, catatan capaian tahfidz & pengumuman komite.</p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Status Sistem Kementerian & Medsos */}
+            <div className="grid grid-cols-2 gap-3 text-[9.5px]">
+              <div className="border border-slate-300 p-2.5 bg-white">
+                <strong className="block text-slate-900 uppercase font-bold text-[9.5px] mb-1 border-b border-slate-200 pb-0.5">
+                  Status Database Kemenag RI
+                </strong>
+                <ul className="space-y-1 text-slate-700">
+                  <li className="flex justify-between">
+                    <span>EMIS 4.0 Madrasah:</span>
+                    <strong className="text-emerald-800 font-mono">100% Valid & BAP Tuntas</strong>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Simpatika Kemenag:</span>
+                    <strong className="text-emerald-800 font-mono">100% Update & Layak Bayar</strong>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Aplikasi EDM & e-RKAM:</span>
+                    <strong className="text-emerald-800 font-mono">Sinkronisasi 2026/2027</strong>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="border border-slate-300 p-2.5 bg-white">
+                <strong className="block text-slate-900 uppercase font-bold text-[9.5px] mb-1 border-b border-slate-200 pb-0.5">
+                  Akun Media Sosial & Kontak Humas
+                </strong>
+                <ul className="space-y-1 text-slate-700 font-mono text-[9px]">
+                  <li className="flex justify-between">
+                    <span className="font-sans">Instagram:</span>
+                    <span className="text-slate-900">{institution.socialMedia?.instagram || '@ra_alkhoiriyah_official'}</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="font-sans">YouTube Channel:</span>
+                    <span className="text-slate-900">{institution.socialMedia?.youtube || 'RA Al-Khoiriyah TV'}</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span className="font-sans">WhatsApp Humas:</span>
+                    <span className="text-slate-900">{institution.socialMedia?.whatsapp || '081234567890'}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Tanda Tangan Verifikator TIK */}
+            <div className="pt-2 text-[10px] text-black avoid-break">
+              <div className="text-right mb-2">
+                <p>{evaluators.tempatPenilaian}, {evaluators.tanggalPenilaian}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6 text-center">
+                <div>
+                  <p className="font-semibold">Operator / Pengelola IT Lembaga,</p>
+                  <div className="h-12" />
+                  <p className="font-bold underline">Mufroni, S.Pd</p>
+                  <p className="font-mono text-[9px]">Pengelola Data EMIS & TIK</p>
+                </div>
+
+                <div>
+                  <p className="font-semibold">Kepala Raudlatul Athfal,</p>
+                  <div className="h-12" />
+                  <p className="font-bold underline">{principal.namaLengkap}</p>
+                  <p className="font-mono text-[9px]">NIP. {principal.nip}</p>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 

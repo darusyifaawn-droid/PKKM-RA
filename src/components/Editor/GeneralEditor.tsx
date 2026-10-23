@@ -1,6 +1,24 @@
 import React, { useRef } from 'react';
-import { InstitutionProfile, PrincipalProfile, EvaluatorProfile } from '../../types/ppkm';
-import { Building2, UserCheck, Shield, Upload, RefreshCw } from 'lucide-react';
+import { InstitutionProfile, PrincipalProfile, EvaluatorProfile, SocialMediaInfo, AccreditationDetail } from '../../types/ppkm';
+import { 
+  Building2, 
+  UserCheck, 
+  Shield, 
+  Upload, 
+  RefreshCw, 
+  Share2, 
+  ShieldCheck, 
+  Award, 
+  Globe, 
+  Youtube, 
+  Instagram, 
+  Facebook, 
+  Phone, 
+  Mail, 
+  Sparkles, 
+  FileText,
+  MessageSquare
+} from 'lucide-react';
 
 interface GeneralEditorProps {
   institution: InstitutionProfile;
@@ -22,6 +40,7 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
   const logoInputRef = useRef<HTMLInputElement>(null);
   const principalPhotoInputRef = useRef<HTMLInputElement>(null);
   const buildingPhotoInputRef = useRef<HTMLInputElement>(null);
+  const accreditationCertInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -157,7 +176,7 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
             <span>Identitas & Biodata Kepala Madrasah</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Data kepegawaian dan kepemimpinan yang dinilai dalam PPKM.
+            Data kepegawaian dan kepemimpinan yang dinilai dalam PKKM.
           </p>
         </div>
 
@@ -356,7 +375,7 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
           </div>
 
           <div>
-            <label className="block font-medium text-slate-700 mb-1">Periode Penilaian PPKM</label>
+            <label className="block font-medium text-slate-700 mb-1">Periode Penilaian PKKM</label>
             <input
               type="text"
               value={institution.periodePenilaian}
@@ -462,7 +481,7 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
             <span>Tim Penilai (Pengawas Pembina) & Lembar Pengesahan</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Data penilai PPKM dan pejabat Kementerian Agama yang menandatangani berkas.
+            Data penilai PKKM dan pejabat Kementerian Agama yang menandatangani berkas.
           </p>
         </div>
 
@@ -553,6 +572,416 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
               placeholder="Klangenan, Cirebon"
             />
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5: MEDIA SOSIAL & INFORMASI PUBLIK (USER REQUEST PPT / COMPANY PROFILE) */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+        <div className="border-b border-slate-100 pb-4 mb-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-emerald-700" />
+              <span>Media Sosial & Saluran Informasi Publik (Company Profile)</span>
+            </h2>
+            <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-sm border border-emerald-200">
+              Tampil di Slide PPT
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Akun media sosial madrasah untuk keperluan Company Profile, publikasi digital, dan slide presentasi akreditasi/PKKM.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          <div>
+            <label className="block font-medium text-slate-700 mb-1 flex items-center gap-1.5">
+              <Instagram className="w-3.5 h-3.5 text-pink-600" />
+              <span>Akun Instagram (@username)</span>
+            </label>
+            <input
+              type="text"
+              value={institution.socialMedia?.instagram || ''}
+              onChange={(e) =>
+                onUpdateInstitution({
+                  socialMedia: {
+                    instagram: e.target.value,
+                    youtube: institution.socialMedia?.youtube || '',
+                    facebook: institution.socialMedia?.facebook || '',
+                    tiktok: institution.socialMedia?.tiktok || '',
+                    website: institution.socialMedia?.website || '',
+                    whatsapp: institution.socialMedia?.whatsapp || '',
+                    email: institution.socialMedia?.email || '',
+                  },
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden font-mono"
+              placeholder="@min8cirebon_official"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1 flex items-center gap-1.5">
+              <Youtube className="w-3.5 h-3.5 text-red-600" />
+              <span>Nama / Channel YouTube</span>
+            </label>
+            <input
+              type="text"
+              value={institution.socialMedia?.youtube || ''}
+              onChange={(e) =>
+                onUpdateInstitution({
+                  socialMedia: {
+                    instagram: institution.socialMedia?.instagram || '',
+                    youtube: e.target.value,
+                    facebook: institution.socialMedia?.facebook || '',
+                    tiktok: institution.socialMedia?.tiktok || '',
+                    website: institution.socialMedia?.website || '',
+                    whatsapp: institution.socialMedia?.whatsapp || '',
+                    email: institution.socialMedia?.email || '',
+                  },
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+              placeholder="MIN 8 Cirebon TV"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1 flex items-center gap-1.5">
+              <Facebook className="w-3.5 h-3.5 text-blue-600" />
+              <span>Halaman Facebook</span>
+            </label>
+            <input
+              type="text"
+              value={institution.socialMedia?.facebook || ''}
+              onChange={(e) =>
+                onUpdateInstitution({
+                  socialMedia: {
+                    instagram: institution.socialMedia?.instagram || '',
+                    youtube: institution.socialMedia?.youtube || '',
+                    facebook: e.target.value,
+                    tiktok: institution.socialMedia?.tiktok || '',
+                    website: institution.socialMedia?.website || '',
+                    whatsapp: institution.socialMedia?.whatsapp || '',
+                    email: institution.socialMedia?.email || '',
+                  },
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+              placeholder="MI Negeri 8 Cirebon Official"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1 flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Website Resmi / Portal Madrasah</span>
+            </label>
+            <input
+              type="text"
+              value={institution.socialMedia?.website || ''}
+              onChange={(e) =>
+                onUpdateInstitution({
+                  socialMedia: {
+                    instagram: institution.socialMedia?.instagram || '',
+                    youtube: institution.socialMedia?.youtube || '',
+                    facebook: institution.socialMedia?.facebook || '',
+                    tiktok: institution.socialMedia?.tiktok || '',
+                    website: e.target.value,
+                    whatsapp: institution.socialMedia?.whatsapp || '',
+                    email: institution.socialMedia?.email || '',
+                  },
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden font-mono"
+              placeholder="https://min8cirebon.sch.id"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1 flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-green-600" />
+              <span>WhatsApp Humas / Layanan Publik</span>
+            </label>
+            <input
+              type="text"
+              value={institution.socialMedia?.whatsapp || ''}
+              onChange={(e) =>
+                onUpdateInstitution({
+                  socialMedia: {
+                    instagram: institution.socialMedia?.instagram || '',
+                    youtube: institution.socialMedia?.youtube || '',
+                    facebook: institution.socialMedia?.facebook || '',
+                    tiktok: institution.socialMedia?.tiktok || '',
+                    website: institution.socialMedia?.website || '',
+                    whatsapp: e.target.value,
+                    email: institution.socialMedia?.email || '',
+                  },
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden font-mono"
+              placeholder="081312290690"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1 flex items-center gap-1.5">
+              <Share2 className="w-3.5 h-3.5 text-purple-600" />
+              <span>TikTok Madrasah (@username)</span>
+            </label>
+            <input
+              type="text"
+              value={institution.socialMedia?.tiktok || ''}
+              onChange={(e) =>
+                onUpdateInstitution({
+                  socialMedia: {
+                    instagram: institution.socialMedia?.instagram || '',
+                    youtube: institution.socialMedia?.youtube || '',
+                    facebook: institution.socialMedia?.facebook || '',
+                    tiktok: e.target.value,
+                    website: institution.socialMedia?.website || '',
+                    whatsapp: institution.socialMedia?.whatsapp || '',
+                    email: institution.socialMedia?.email || '',
+                  },
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden font-mono"
+              placeholder="@min8cirebon"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6: AKREDITASI & UPLOAD SERTIFIKAT (USER REQUEST) */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+        <div className="border-b border-slate-100 pb-4 mb-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-amber-600" />
+              <span>Sertifikat Akreditasi & Dokumen Legalitas (BAN-PDM / BAN-S/M)</span>
+            </h2>
+            <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-sm border border-amber-200">
+              Dokumen Resmi
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Unggah file foto / scan sertifikat akreditasi madrasah untuk ditampilkan di slide Company Profile dan lampiran portofolio PKKM.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          {/* Scan Certificate Upload & Preview */}
+          <div className="md:col-span-5 border border-slate-200 rounded-xl p-4 bg-slate-50/50 flex flex-col items-center text-center">
+            <span className="text-xs font-semibold text-slate-700 mb-2">Scan Sertifikat Akreditasi</span>
+            
+            <div className="w-full aspect-4/3 rounded-lg bg-white border border-slate-300 overflow-hidden mb-3 shadow-xs relative flex items-center justify-center">
+              {institution.accreditationDetail?.sertifikatUrl ? (
+                <img
+                  src={institution.accreditationDetail.sertifikatUrl}
+                  alt="Scan Sertifikat Akreditasi"
+                  className="w-full h-full object-contain p-1"
+                />
+              ) : (
+                <div className="text-center p-4">
+                  <Award className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <span className="text-xs text-slate-400">Belum ada scan sertifikat</span>
+                </div>
+              )}
+            </div>
+
+            <input
+              ref={accreditationCertInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) =>
+                handleFileUpload(e, (url) =>
+                  onUpdateInstitution({
+                    accreditationDetail: {
+                      peringkat: institution.accreditationDetail?.peringkat || 'Terakreditasi B (Baik)',
+                      nilaiAngka: institution.accreditationDetail?.nilaiAngka || '86',
+                      nomorSk: institution.accreditationDetail?.nomorSk || '051/BAN-SM/SK/2024',
+                      lembagaAkreditasi: institution.accreditationDetail?.lembagaAkreditasi || 'Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M)',
+                      tahunAkreditasi: institution.accreditationDetail?.tahunAkreditasi || '2024',
+                      masaBerlaku: institution.accreditationDetail?.masaBerlaku || '2024 s/d 2029',
+                      sertifikatUrl: url,
+                    },
+                  })
+                )
+              }
+            />
+
+            <button
+              onClick={() => accreditationCertInputRef.current?.click()}
+              className="px-3.5 py-1.5 text-xs font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Unggah Scan Sertifikat Akreditasi</span>
+            </button>
+            <span className="text-[11px] text-slate-400 mt-2">Dukungan format JPG, PNG, atau scan dokumen</span>
+          </div>
+
+          {/* Detailed Accreditation Fields */}
+          <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Status / Peringkat Akreditasi</label>
+              <input
+                type="text"
+                value={institution.accreditationDetail?.peringkat || institution.akreditasi || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  onUpdateInstitution({
+                    akreditasi: val,
+                    accreditationDetail: {
+                      peringkat: val,
+                      nilaiAngka: institution.accreditationDetail?.nilaiAngka || '86',
+                      nomorSk: institution.accreditationDetail?.nomorSk || '',
+                      lembagaAkreditasi: institution.accreditationDetail?.lembagaAkreditasi || 'Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M)',
+                      tahunAkreditasi: institution.accreditationDetail?.tahunAkreditasi || '2024',
+                      masaBerlaku: institution.accreditationDetail?.masaBerlaku || '2024 s/d 2029',
+                      sertifikatUrl: institution.accreditationDetail?.sertifikatUrl || '',
+                    },
+                  });
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Terakreditasi B (Baik) / A (Unggul)"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Nilai Angka Akreditasi</label>
+              <input
+                type="text"
+                value={institution.accreditationDetail?.nilaiAngka || ''}
+                onChange={(e) =>
+                  onUpdateInstitution({
+                    accreditationDetail: {
+                      peringkat: institution.accreditationDetail?.peringkat || institution.akreditasi || 'Terakreditasi B',
+                      nilaiAngka: e.target.value,
+                      nomorSk: institution.accreditationDetail?.nomorSk || '',
+                      lembagaAkreditasi: institution.accreditationDetail?.lembagaAkreditasi || 'BAN-S/M',
+                      tahunAkreditasi: institution.accreditationDetail?.tahunAkreditasi || '2024',
+                      masaBerlaku: institution.accreditationDetail?.masaBerlaku || '2024 s/d 2029',
+                      sertifikatUrl: institution.accreditationDetail?.sertifikatUrl || '',
+                    },
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden font-mono"
+                placeholder="Contoh: 86 atau 92"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block font-medium text-slate-700 mb-1">Nomor SK / Sertifikat Akreditasi</label>
+              <input
+                type="text"
+                value={institution.accreditationDetail?.nomorSk || ''}
+                onChange={(e) =>
+                  onUpdateInstitution({
+                    accreditationDetail: {
+                      peringkat: institution.accreditationDetail?.peringkat || institution.akreditasi || 'Terakreditasi B',
+                      nilaiAngka: institution.accreditationDetail?.nilaiAngka || '86',
+                      nomorSk: e.target.value,
+                      lembagaAkreditasi: institution.accreditationDetail?.lembagaAkreditasi || 'BAN-S/M',
+                      tahunAkreditasi: institution.accreditationDetail?.tahunAkreditasi || '2024',
+                      masaBerlaku: institution.accreditationDetail?.masaBerlaku || '2024 s/d 2029',
+                      sertifikatUrl: institution.accreditationDetail?.sertifikatUrl || '',
+                    },
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden font-mono"
+                placeholder="051/BAN-SM/SK/2024"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Lembaga Akreditasi</label>
+              <input
+                type="text"
+                value={institution.accreditationDetail?.lembagaAkreditasi || ''}
+                onChange={(e) =>
+                  onUpdateInstitution({
+                    accreditationDetail: {
+                      peringkat: institution.accreditationDetail?.peringkat || institution.akreditasi || 'Terakreditasi B',
+                      nilaiAngka: institution.accreditationDetail?.nilaiAngka || '86',
+                      nomorSk: institution.accreditationDetail?.nomorSk || '',
+                      lembagaAkreditasi: e.target.value,
+                      tahunAkreditasi: institution.accreditationDetail?.tahunAkreditasi || '2024',
+                      masaBerlaku: institution.accreditationDetail?.masaBerlaku || '2024 s/d 2029',
+                      sertifikatUrl: institution.accreditationDetail?.sertifikatUrl || '',
+                    },
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M)"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Masa Berlaku Akreditasi</label>
+              <input
+                type="text"
+                value={institution.accreditationDetail?.masaBerlaku || ''}
+                onChange={(e) =>
+                  onUpdateInstitution({
+                    accreditationDetail: {
+                      peringkat: institution.accreditationDetail?.peringkat || institution.akreditasi || 'Terakreditasi B',
+                      nilaiAngka: institution.accreditationDetail?.nilaiAngka || '86',
+                      nomorSk: institution.accreditationDetail?.nomorSk || '',
+                      lembagaAkreditasi: institution.accreditationDetail?.lembagaAkreditasi || 'BAN-S/M',
+                      tahunAkreditasi: institution.accreditationDetail?.tahunAkreditasi || '2024',
+                      masaBerlaku: e.target.value,
+                      sertifikatUrl: institution.accreditationDetail?.sertifikatUrl || '',
+                    },
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="2024 s/d 2029 (5 Tahun)"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 7: MOTTO & SAMBUTAN / PRAKATA KEPALA MADRASAH (COMPANY PROFILE SLIDE) */}
+      <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+        <div className="border-b border-slate-100 pb-4 mb-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-emerald-700" />
+              <span>Motto & Sambutan / Prakata Kepala Madrasah (Slide Pembuka)</span>
+            </h2>
+            <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-sm border border-emerald-200">
+              Slide 1 & 2 PPT
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Motto lembaga dan prakata resmi Kepala Madrasah yang menyambut kedatangan Asesor / Pengawas Pembina dalam presentasi.
+          </p>
+        </div>
+
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Motto / Slogan Madrasah</label>
+            <input
+              type="text"
+              value={institution.motto || ''}
+              onChange={(e) => onUpdateInstitution({ motto: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden text-slate-800 font-medium"
+              placeholder="Contoh: Maju, Bermutu, Mandiri dan Berprestasi Berlandaskan Akhlakul Karimah"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Sambutan / Prakata Kepala Madrasah untuk Presentasi</label>
+            <textarea
+              rows={3}
+              value={institution.sambutanKepala || ''}
+              onChange={(e) => onUpdateInstitution({ sambutanKepala: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden text-slate-800 leading-relaxed"
+              placeholder="Bismillaahirrohmaanirrohiim. Selamat datang para Asesor, Pengawas Pembina, dan seluruh Tim Penilai Kinerja Kepala Madrasah (PKKM)..."
+            />
+            <span className="text-[11px] text-slate-400 mt-1 block">Teks ini akan otomatis ditampilkan dengan tata letak kutipan elegan di Slide 2 Presentasi.</span>
           </div>
         </div>
       </section>

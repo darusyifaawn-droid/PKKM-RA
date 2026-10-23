@@ -9,12 +9,13 @@ import {
   Eye,
   Sliders,
   Camera,
-  Award
+  Award,
+  MonitorPlay
 } from 'lucide-react';
 
 interface HeaderNavProps {
-  activeTab: 'general' | 'ptk' | 'students_sarpras' | 'programs' | 'photos' | 'assessment' | 'print';
-  setActiveTab: (tab: 'general' | 'ptk' | 'students_sarpras' | 'programs' | 'photos' | 'assessment' | 'print') => void;
+  activeTab: 'general' | 'ptk' | 'structural' | 'students_sarpras' | 'programs' | 'photos' | 'assessment' | 'presentation' | 'print';
+  setActiveTab: (tab: 'general' | 'ptk' | 'structural' | 'students_sarpras' | 'programs' | 'photos' | 'assessment' | 'presentation' | 'print') => void;
   onResetData: () => void;
   onExportJson: () => void;
   onImportJson: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -60,7 +61,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-bold tracking-tight text-slate-900 whitespace-nowrap">
-                  SIM-PPKM Madrasah
+                  SIM-PKKM Madrasah
                 </span>
                 <span className="text-xs bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-sm border border-emerald-200">
                   Kemenag RI
@@ -77,7 +78,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <button
               onClick={onResetData}
               title="Reset ke Contoh Data MIN 8 Cirebon"
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
               <span>Data MIN 8</span>
@@ -86,7 +87,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <button
               onClick={onExportJson}
               title="Ekspor Data Cadangan JSON"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
               <span>Ekspor JSON</span>
@@ -105,11 +106,20 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             </label>
 
             <button
+              onClick={() => setActiveTab('presentation')}
+              title="Tampilkan Mode Presentasi Slide PowerPoint & Company Profile (16:9)"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-300 transition-colors shadow-xs whitespace-nowrap cursor-pointer"
+            >
+              <MonitorPlay className="w-4 h-4 text-emerald-700" />
+              <span>Mode PPT (16:9)</span>
+            </button>
+
+            <button
               onClick={onDirectPrint}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-xs whitespace-nowrap"
+              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg transition-colors shadow-xs whitespace-nowrap cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak / Cetak PDF</span>
+              <span>Cetak Dokumen PKKM</span>
             </button>
           </div>
         </div>
@@ -118,7 +128,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         <div className="flex items-center space-x-1 overflow-x-auto py-2 border-t border-slate-100 scrollbar-none text-xs font-medium">
           <button
             onClick={() => setActiveTab('general')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'general'
                 ? 'bg-emerald-50 text-emerald-800 font-semibold'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -130,7 +140,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
           <button
             onClick={() => setActiveTab('ptk')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'ptk'
                 ? 'bg-emerald-50 text-emerald-800 font-semibold'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -140,54 +150,77 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('structural')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
+              activeTab === 'structural'
+                ? 'bg-emerald-50 text-emerald-800 font-semibold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <span>3. Struktur Organisasi</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('students_sarpras')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'students_sarpras'
                 ? 'bg-emerald-50 text-emerald-800 font-semibold'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
-            <span>3. Siswa & Sarpras</span>
+            <span>4. Siswa & Sarpras</span>
           </button>
 
           <button
             onClick={() => setActiveTab('programs')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'programs'
                 ? 'bg-emerald-50 text-emerald-800 font-semibold'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
-            <span>4. Program Kerja & Evaluasi</span>
+            <span>5. Program Kerja & Evaluasi</span>
           </button>
 
           <button
             onClick={() => setActiveTab('photos')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'photos'
                 ? 'bg-emerald-50 text-emerald-800 font-semibold'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
             <Camera className="w-3.5 h-3.5" />
-            <span>5. Galeri Foto Bukti Fisik</span>
+            <span>6. Galeri Foto Bukti Fisik</span>
           </button>
 
           <button
             onClick={() => setActiveTab('assessment')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'assessment'
                 ? 'bg-emerald-50 text-emerald-800 font-semibold'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
             <Award className="w-3.5 h-3.5" />
-            <span>6. Instrumen Skor PPKM</span>
+            <span>7. Instrumen & Nilai PKKM</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('presentation')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
+              activeTab === 'presentation'
+                ? 'bg-emerald-800 text-white font-bold shadow-xs'
+                : 'text-emerald-900 bg-emerald-50/90 hover:bg-emerald-100 border border-emerald-200 font-semibold'
+            }`}
+          >
+            <MonitorPlay className="w-3.5 h-3.5" />
+            <span>🖥️ Mode PPT (Company Profile)</span>
           </button>
 
           <button
             onClick={() => setActiveTab('print')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-md whitespace-nowrap transition-colors cursor-pointer ${
               activeTab === 'print'
                 ? 'bg-slate-900 text-white font-semibold shadow-xs'
                 : 'text-slate-700 bg-slate-100 hover:bg-slate-200'
