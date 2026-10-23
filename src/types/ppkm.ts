@@ -46,8 +46,11 @@ export interface InstitutionProfile {
   luasTanah: string;
   statusTanah: string;
   logoUrl: string;
+  logoKemenagUrl?: string;
   fotoMadrasahUrl: string;
   fotoBersamaUrl?: string;
+  fotoSupervisiUrl?: string;
+  fotoTropiUrl?: string;
   visi?: string;
   misi?: string[];
   motto?: string;

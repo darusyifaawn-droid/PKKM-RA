@@ -197,18 +197,18 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
 
               {/* Foto Bersanding Rapih (Gedung & Foto Kepala) */}
               <div className="my-2 flex items-center justify-center gap-3">
-                <div className="w-40 h-24 rounded-sm border border-slate-300 overflow-hidden bg-slate-50 shadow-xs">
+                <div className="w-40 h-24 rounded-sm border border-slate-300 overflow-hidden bg-slate-50 shadow-xs flex items-center justify-center p-0.5">
                   <img
                     src={institution.fotoMadrasahUrl}
                     alt="Gedung Madrasah"
-                    className="w-full h-full object-cover"
+                    className="max-h-full max-w-full object-contain"
                   />
                 </div>
-                <div className="w-20 h-24 rounded-sm border border-slate-300 overflow-hidden bg-slate-50 shadow-xs">
+                <div className="w-20 h-24 rounded-sm border border-slate-300 overflow-hidden bg-slate-50 shadow-xs flex items-center justify-center p-0.5">
                   <img
                     src={principal.fotoUrl}
                     alt={principal.namaLengkap}
-                    className="w-full h-full object-cover"
+                    className="max-h-full max-w-full object-contain"
                   />
                 </div>
               </div>
@@ -411,7 +411,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                   <img
                     src={principal.fotoUrl}
                     alt={principal.namaLengkap}
-                    className="w-full h-full object-cover"
+                    className="max-h-full max-w-full object-contain"
                   />
                 </div>
 
@@ -517,11 +517,11 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
               <p className="text-[10px] font-semibold text-slate-600 mb-1">
                 DOKUMENTASI GEDUNG & HALAMAN UTAMA {institution.namaLembaga}
               </p>
-              <div className="h-32 w-full max-w-md mx-auto overflow-hidden border border-slate-300">
+              <div className="h-40 w-full max-w-md mx-auto overflow-hidden border border-slate-300 bg-slate-50 flex items-center justify-center p-1">
                 <img
                   src={institution.fotoMadrasahUrl}
                   alt="Bangunan Madrasah"
-                  className="w-full h-full object-cover"
+                  className="max-h-full max-w-full object-contain"
                 />
               </div>
             </div>
@@ -872,8 +872,8 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                     { namaBarang: 'Sentra Balok & Kreativitas Anak', fotoUrl: '/src/assets/images/foto_kegiatan_1_1792427218693.jpg' }
                   ]).map((item, idx) => (
                     <div key={idx} className="border border-slate-300 p-1 bg-slate-50 text-center rounded-xs">
-                      <div className="h-16 w-full overflow-hidden bg-white mb-1 border border-slate-200">
-                        <img src={item.fotoUrl} alt={item.namaBarang} className="w-full h-full object-cover" />
+                      <div className="h-24 w-full overflow-hidden bg-white mb-1 border border-slate-200 flex items-center justify-center p-0.5">
+                        <img src={item.fotoUrl} alt={item.namaBarang} className="max-h-full max-w-full object-contain" />
                       </div>
                       <span className="text-[8px] font-semibold text-slate-800 block truncate leading-tight">{item.namaBarang}</span>
                     </div>
@@ -1156,11 +1156,11 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                           </span>
                         </div>
 
-                        <div className="h-44 sm:h-48 w-full border border-slate-300 overflow-hidden bg-slate-50 mb-2">
+                        <div className="h-56 sm:h-60 w-full border border-slate-300 overflow-hidden bg-slate-50 mb-2 flex items-center justify-center p-1.5">
                           <img
                             src={photo.fotoUrl}
                             alt={photo.judul}
-                            className="w-full h-full object-cover"
+                            className="max-h-full max-w-full object-contain"
                           />
                         </div>
 
@@ -1192,11 +1192,11 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                             </span>
                           </div>
 
-                          <div className="h-28 w-full border border-slate-300 overflow-hidden bg-slate-50 mb-1.5">
+                          <div className="h-36 w-full border border-slate-300 overflow-hidden bg-slate-50 mb-1.5 flex items-center justify-center p-1">
                             <img
                               src={photo.fotoUrl}
                               alt={photo.judul}
-                              className="w-full h-full object-cover"
+                              className="max-h-full max-w-full object-contain"
                             />
                           </div>
                         </div>
@@ -1432,11 +1432,11 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                   <span className="font-bold text-[10px] text-slate-900">1. Website Resmi RA / Madrasah</span>
                   <span className="text-[8px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded-xs">Aktif Online</span>
                 </div>
-                <div className="h-44 w-full border border-slate-300 overflow-hidden bg-white mb-2">
+                <div className="h-48 w-full border border-slate-300 overflow-hidden bg-white mb-2 flex items-center justify-center p-1">
                   <img
                     src={institution.websiteScreenshotUrl || '/src/assets/images/beranda_website_ra_1792723631190.jpg'}
                     alt="Beranda Website Resmi"
-                    className="w-full h-full object-cover"
+                    className="max-h-full max-w-full object-contain"
                   />
                 </div>
                 <div className="text-[9px] text-slate-700 space-y-0.5">
@@ -1451,11 +1451,11 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                   <span className="font-bold text-[10px] text-slate-900">2. Portal Siswa & Wali Murid</span>
                   <span className="text-[8px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.2 rounded-xs">Terintegrasi</span>
                 </div>
-                <div className="h-44 w-full border border-slate-300 overflow-hidden bg-white mb-2">
+                <div className="h-48 w-full border border-slate-300 overflow-hidden bg-white mb-2 flex items-center justify-center p-1">
                   <img
                     src={institution.portalSiswaScreenshotUrl || '/src/assets/images/portal_siswa_ra_1792723646007.jpg'}
                     alt="Portal Siswa & Orang Tua"
-                    className="w-full h-full object-cover"
+                    className="max-h-full max-w-full object-contain"
                   />
                 </div>
                 <div className="text-[9px] text-slate-700 space-y-0.5">

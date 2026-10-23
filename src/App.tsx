@@ -255,8 +255,13 @@ export default function App() {
         {activeTab === 'photos' && (
           <PhotosEditor
             photoEvidences={data.photoEvidences}
+            institution={data.institution}
             onUpdatePhotoEvidences={(updated) => setData({ ...data, photoEvidences: updated })}
+            onUpdateInstitution={(updated) =>
+              setData({ ...data, institution: { ...data.institution, ...updated } })
+            }
             onNavigateToPrint={() => setActiveTab('print')}
+            onNavigateToPresentation={() => setActiveTab('presentation')}
           />
         )}
 

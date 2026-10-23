@@ -27,7 +27,9 @@ import {
   ShieldCheck, 
   Check, 
   ZoomIn, 
-  X 
+  X,
+  Calendar,
+  Tag 
 } from 'lucide-react';
 
 interface PresentationViewProps {
@@ -77,81 +79,129 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
   const d3Ptk = data.ptkList.filter((p) => p.pendidikanTerakhir.toUpperCase().includes('D3') || p.pendidikanTerakhir.toUpperCase().includes('D-3')).length;
   const certifiedPtk = data.ptkList.filter((p) => p.statusSertifikasi === 'SERTIFIKASI').length;
 
-  // The 10 Official Slides for PKKM RA Presentation
-  const slides = [
+  // Dynamic Structure for PKKM RA Presentation:
+  // 1-9: Official Core PKKM RA Slides
+  // 10...(10 + N - 1): Dedicated High-Res Activity Photo Evidence Showcase Slides
+  // Final: Closing Slide (Penutup & Terima Kasih - Foto Bersama Seluruh Guru & Komite)
+  interface SlideDef {
+    id: string;
+    number: number;
+    category: string;
+    title: string;
+    subtitle: string;
+    type: 'core' | 'photo_evidence' | 'closing';
+    coreIndex?: number;
+    photoData?: PhotoEvidenceItem;
+    photoIndex?: number;
+  }
+
+  const coreSlides: SlideDef[] = [
     { 
       id: 'slide_1', 
       number: 1, 
       category: 'Pembukaan', 
       title: 'Judul Utama & Tim Penilai', 
-      subtitle: 'Presentasi Laporan Kinerja Kepala RA' 
+      subtitle: 'Presentasi Laporan Kinerja Kepala RA',
+      type: 'core',
+      coreIndex: 0
     },
     { 
       id: 'slide_2', 
       number: 2, 
       category: 'Pembukaan', 
       title: 'Profil Singkat Lembaga', 
-      subtitle: 'Identitas, Akreditasi, Visi & Misi' 
+      subtitle: 'Identitas, Akreditasi, Visi & Misi',
+      type: 'core',
+      coreIndex: 1
     },
     { 
       id: 'slide_3', 
       number: 3, 
       category: 'Pembukaan', 
       title: 'Data Kondisi Riil RA', 
-      subtitle: 'Siswa, PTK & Sarpras Unggulan' 
+      subtitle: 'Siswa, PTK & Sarpras Unggulan',
+      type: 'core',
+      coreIndex: 2
     },
     { 
       id: 'slide_4', 
       number: 4, 
       category: 'Komponen A', 
       title: 'Capaian Komponen A', 
-      subtitle: 'Usaha Pengembangan RA & TIK' 
+      subtitle: 'Usaha Pengembangan RA & TIK',
+      type: 'core',
+      coreIndex: 3
     },
     { 
       id: 'slide_5', 
       number: 5, 
       category: 'Komponen B', 
       title: 'Capaian Komponen B', 
-      subtitle: 'Pelaksanaan Tugas Manajerial & BOP' 
+      subtitle: 'Pelaksanaan Tugas Manajerial & BOP',
+      type: 'core',
+      coreIndex: 4
     },
     { 
       id: 'slide_6', 
       number: 6, 
       category: 'Komponen C', 
       title: 'Capaian Komponen C', 
-      subtitle: 'Kewirausahaan, Inovasi & P5-RA' 
+      subtitle: 'Kewirausahaan, Inovasi & P5-RA',
+      type: 'core',
+      coreIndex: 5
     },
     { 
       id: 'slide_7', 
       number: 7, 
       category: 'Komponen D', 
       title: 'Capaian Komponen D', 
-      subtitle: 'Supervisi Guru & Tenaga Kependidikan' 
+      subtitle: 'Supervisi Guru & Tenaga Kependidikan',
+      type: 'core',
+      coreIndex: 6
     },
     { 
       id: 'slide_8', 
       number: 8, 
       category: 'Komponen E', 
       title: 'Hasil Kinerja & Prestasi', 
-      subtitle: 'Penghargaan Siswa, Guru & Kejuaraan' 
+      subtitle: 'Penghargaan Siswa, Guru & Kejuaraan',
+      type: 'core',
+      coreIndex: 7
     },
     { 
       id: 'slide_9', 
       number: 9, 
       category: 'Evaluasi', 
       title: 'Analisis SWOT & RTL', 
-      subtitle: 'Rencana Tindak Lanjut Program Kerja' 
-    },
-    { 
-      id: 'slide_10', 
-      number: 10, 
-      category: 'Penutup', 
-      title: 'Penutup & Terima Kasih', 
-      subtitle: 'Dokumentasi Dewan Guru & Komite' 
+      subtitle: 'Rencana Tindak Lanjut Program Kerja',
+      type: 'core',
+      coreIndex: 8
     },
   ];
 
+  const photoSlides: SlideDef[] = (data.photoEvidences || []).map((photo, idx) => ({
+    id: `slide_photo_${photo.id || idx}`,
+    number: 10 + idx,
+    category: 'Foto Kegiatan',
+    title: photo.judul || `Dokumentasi Bukti Fisik ${idx + 1}`,
+    subtitle: `${photo.kategori} • ${photo.tanggal || 'T.P ' + institution.tahunPelajaran}`,
+    type: 'photo_evidence',
+    photoData: photo,
+    photoIndex: idx,
+  }));
+
+  const closingSlide: SlideDef = {
+    id: 'slide_closing',
+    number: 10 + photoSlides.length,
+    category: 'Penutup',
+    title: 'Penutup & Terima Kasih',
+    subtitle: 'Dokumentasi Dewan Guru & Komite',
+    type: 'closing',
+  };
+
+  const slides: SlideDef[] = [...coreSlides, ...photoSlides, closingSlide];
   const totalSlides = slides.length;
+  const activeSlide = slides[currentSlide] || slides[0];
 
   const handleNext = () => {
     setCurrentSlide((prev) => (prev < totalSlides - 1 ? prev + 1 : 0));
@@ -231,7 +281,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
               PPT PKKM RA
             </span>
             <span className="text-xs font-semibold text-slate-200 hidden md:inline truncate max-w-xs">
-              {slides[currentSlide].title}
+              {activeSlide.title}
             </span>
           </div>
         </div>
@@ -281,10 +331,10 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                 ? 'bg-emerald-600 text-white' 
                 : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
             }`}
-            title="Daftar 10 Slide"
+            title={`Daftar Lengkap ${totalSlides} Slide`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">10 Slide</span>
+            <span className="hidden sm:inline">Daftar Slide ({totalSlides})</span>
           </button>
 
           <button
@@ -320,20 +370,20 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             <div className="px-6 sm:px-8 pt-4 pb-2 flex items-center justify-between border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-xs">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-800/80 flex items-center justify-center text-emerald-400 font-bold font-mono text-sm">
-                  0{slides[currentSlide].number}
+                  {activeSlide.number < 10 ? '0' + activeSlide.number : activeSlide.number}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                      {slides[currentSlide].category}
+                      {activeSlide.category}
                     </span>
                     <span className="text-slate-600">•</span>
                     <span className="text-[10px] font-semibold text-slate-400">
-                      {slides[currentSlide].subtitle}
+                      {activeSlide.subtitle}
                     </span>
                   </div>
                   <h2 className="text-base sm:text-lg md:text-xl font-bold text-white tracking-tight">
-                    {slides[currentSlide].title}
+                    {activeSlide.title}
                   </h2>
                 </div>
               </div>
@@ -359,7 +409,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             {/* ============================================================== */}
             {/* SLIDE 1: JUDUL UTAMA (BAGIAN PEMBUKAAN)                         */}
             {/* ============================================================== */}
-            {currentSlide === 0 && (
+            {activeSlide.type === 'core' && activeSlide.coreIndex === 0 && (
               <div className="h-full flex flex-col justify-between py-2 text-center relative">
                 
                 {/* Top Logos & Agency */}
@@ -367,7 +417,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 sm:w-16 sm:h-16 p-1 bg-white/10 rounded-xl border border-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
                       <img 
-                        src="/src/assets/images/logo_kemenag_1792427181313.png" 
+                        src={institution.logoKemenagUrl || "/src/assets/images/logo_kemenag_1792427181313.png"} 
                         alt="Logo Kemenag" 
                         className="max-h-full max-w-full object-contain" 
                       />
@@ -426,13 +476,13 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                 {/* Bottom Profile Duo: Kepala RA & Tim Penilai */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto w-full pt-2">
                   
-                  {/* Kepala RA Box */}
+                  {/* Kepala RA Box - Foto Utuh Tidak Terpotong */}
                   <div className="bg-slate-900/80 border border-emerald-900/60 rounded-xl p-3.5 flex items-center gap-3.5 text-left shadow-lg">
-                    <div className="w-14 h-16 sm:w-16 sm:h-20 rounded-lg overflow-hidden border-2 border-emerald-500/60 shrink-0 bg-slate-800 shadow-md">
+                    <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-lg overflow-hidden border-2 border-emerald-500/60 shrink-0 bg-slate-950 shadow-md flex items-center justify-center p-0.5">
                       <img 
                         src={principal.fotoUrl} 
                         alt={principal.namaLengkap} 
-                        className="w-full h-full object-cover" 
+                        className="max-h-full max-w-full object-contain" 
                       />
                     </div>
                     <div className="min-w-0">
@@ -476,7 +526,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             {/* ============================================================== */}
             {/* SLIDE 2: PROFIL SINGKAT LEMBAGA                                 */}
             {/* ============================================================== */}
-            {currentSlide === 1 && (
+            {activeSlide.type === 'core' && activeSlide.coreIndex === 1 && (
               <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                 
                 {/* Left Column: Identitas & Akreditasi (5 cols) */}
@@ -565,15 +615,15 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                     </ul>
                   </div>
 
-                  {/* Foto Gedung Tampak Depan */}
-                  <div className="relative rounded-xl overflow-hidden border border-slate-700/80 h-28 sm:h-32 shadow-lg group">
+                  {/* Foto Gedung Tampak Depan - Tidak Terpotong */}
+                  <div className="relative rounded-xl overflow-hidden border border-slate-700/80 h-32 sm:h-36 shadow-lg bg-slate-950 flex items-center justify-center group">
                     <img 
                       src={institution.fotoMadrasahUrl} 
                       alt="Gedung Lembaga" 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-2.5">
-                      <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent flex items-end p-2">
+                      <span className="text-[11px] font-semibold text-white flex items-center gap-1.5">
                         <Building className="w-3.5 h-3.5 text-emerald-400" />
                         Gedung & Halaman Bermain {institutionName}
                       </span>
@@ -587,7 +637,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             {/* ============================================================== */}
             {/* SLIDE 3: DATA KONDISI RIIL RA (SISWA, PTK, SARPRAS)             */}
             {/* ============================================================== */}
-            {currentSlide === 2 && (
+            {activeSlide.type === 'core' && activeSlide.coreIndex === 2 && (
               <div className="h-full flex flex-col justify-between space-y-4">
                 
                 {/* Top Metrics Cards */}
@@ -689,13 +739,13 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                         </div>
                       </div>
 
-                      {/* Sarpras & APE photo pill */}
+                      {/* Sarpras & APE photo pill - Foto Utuh Tidak Terpotong */}
                       <div className="bg-slate-950/70 p-2.5 rounded-lg border border-slate-800 flex items-center gap-3">
-                        <div className="w-20 h-16 rounded-md overflow-hidden shrink-0 border border-slate-700">
+                        <div className="w-24 h-20 rounded-md overflow-hidden shrink-0 border border-slate-700 bg-slate-950 flex items-center justify-center p-0.5">
                           <img 
                             src={data.inventory.find(i => i.fotoUrl)?.fotoUrl || "/src/assets/images/sarpras_ape_bermain_1792723675926.jpg"} 
                             alt="Sarpras APE" 
-                            className="w-full h-full object-cover" 
+                            className="max-h-full max-w-full object-contain" 
                           />
                         </div>
                         <div className="text-[11px] space-y-0.5">
@@ -721,7 +771,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             {/* ============================================================== */}
             {/* SLIDE 4: CAPAIAN KOMPONEN A (USAHA PENGEMBANGAN RA & TIK)       */}
             {/* ============================================================== */}
-            {currentSlide === 3 && (
+            {activeSlide.type === 'core' && activeSlide.coreIndex === 3 && (
               <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                 
                 {/* Left 6 cols: Poin Capaian Komponen A */}
@@ -769,23 +819,23 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                   </div>
                 </div>
 
-                {/* Right 6 cols: Visual Screenshots (Website & Portal) */}
+                {/* Right 6 cols: Visual Screenshots (Website & Portal) - Foto Utuh Tidak Terpotong */}
                 <div className="md:col-span-6 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     
                     {/* Website Screenshot */}
                     <div 
                       onClick={() => setPreviewImage({ url: institution.websiteScreenshotUrl || "/src/assets/images/beranda_website_ra_1792723631190.jpg", title: "Beranda Website Resmi RA" })}
-                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-lg hover:border-emerald-500 transition-all"
+                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-lg hover:border-emerald-500 transition-all flex flex-col"
                     >
-                      <div className="aspect-[4/3] overflow-hidden">
+                      <div className="h-36 sm:h-44 w-full bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
                         <img 
                           src={institution.websiteScreenshotUrl || "/src/assets/images/beranda_website_ra_1792723631190.jpg"} 
                           alt="Beranda Website" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                         />
                       </div>
-                      <div className="p-2 bg-slate-950/90 flex items-center justify-between">
+                      <div className="p-2 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between">
                         <span className="text-[10px] font-bold text-slate-200 truncate">Website Resmi RA</span>
                         <ZoomIn className="w-3 h-3 text-emerald-400 opacity-60 group-hover:opacity-100" />
                       </div>
@@ -794,16 +844,16 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                     {/* Portal Siswa Screenshot */}
                     <div 
                       onClick={() => setPreviewImage({ url: institution.portalSiswaScreenshotUrl || "/src/assets/images/portal_siswa_ra_1792723646007.jpg", title: "Portal Siswa & Wali Murid RA" })}
-                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-lg hover:border-emerald-500 transition-all"
+                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-lg hover:border-emerald-500 transition-all flex flex-col"
                     >
-                      <div className="aspect-[4/3] overflow-hidden">
+                      <div className="h-36 sm:h-44 w-full bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
                         <img 
                           src={institution.portalSiswaScreenshotUrl || "/src/assets/images/portal_siswa_ra_1792723646007.jpg"} 
                           alt="Portal Siswa" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                         />
                       </div>
-                      <div className="p-2 bg-slate-950/90 flex items-center justify-between">
+                      <div className="p-2 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between">
                         <span className="text-[10px] font-bold text-slate-200 truncate">Portal Siswa & Ortu</span>
                         <ZoomIn className="w-3 h-3 text-emerald-400 opacity-60 group-hover:opacity-100" />
                       </div>
@@ -834,7 +884,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             {/* ============================================================== */}
             {/* SLIDE 5: CAPAIAN KOMPONEN B (PELAKSANAAN TUGAS MANAJERIAL)       */}
             {/* ============================================================== */}
-            {currentSlide === 4 && (
+            {activeSlide.type === 'core' && activeSlide.coreIndex === 4 && (
               <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                 
                 {/* Left 6 cols: Poin Manajerial */}
@@ -875,23 +925,23 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                   </div>
                 </div>
 
-                {/* Right 6 cols: KALDIK & Sarpras APE Photos */}
+                {/* Right 6 cols: KALDIK & Sarpras APE Photos - Foto Utuh Tidak Terpotong */}
                 <div className="md:col-span-6 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     
                     {/* KALDIK Photo */}
                     <div 
                       onClick={() => setPreviewImage({ url: institution.kaldikUrl || "/src/assets/images/kaldik_madrasah_ra_1792723659933.jpg", title: "Kalender Pendidikan (KALDIK) RA" })}
-                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-lg hover:border-emerald-500 transition-all"
+                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-lg hover:border-emerald-500 transition-all flex flex-col"
                     >
-                      <div className="aspect-[4/3] overflow-hidden">
+                      <div className="h-36 sm:h-44 w-full bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
                         <img 
                           src={institution.kaldikUrl || "/src/assets/images/kaldik_madrasah_ra_1792723659933.jpg"} 
                           alt="KALDIK Madrasah" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                         />
                       </div>
-                      <div className="p-2 bg-slate-950/90 flex items-center justify-between">
+                      <div className="p-2 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between">
                         <span className="text-[10px] font-bold text-slate-200 truncate">KALDIK T.P {institution.tahunPelajaran}</span>
                         <ZoomIn className="w-3 h-3 text-emerald-400 opacity-60 group-hover:opacity-100" />
                       </div>
@@ -900,16 +950,16 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                     {/* APE Bermain Photo */}
                     <div 
                       onClick={() => setPreviewImage({ url: data.inventory.find(i => i.fotoUrl)?.fotoUrl || "/src/assets/images/sarpras_ape_bermain_1792723675926.jpg", title: "Sarana Fasilitas Bermain Anak (APE)" })}
-                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-lg hover:border-emerald-500 transition-all"
+                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-lg hover:border-emerald-500 transition-all flex flex-col"
                     >
-                      <div className="aspect-[4/3] overflow-hidden">
+                      <div className="h-36 sm:h-44 w-full bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
                         <img 
                           src={data.inventory.find(i => i.fotoUrl)?.fotoUrl || "/src/assets/images/sarpras_ape_bermain_1792723675926.jpg"} 
                           alt="Sarana Fasilitas Bermain" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                         />
                       </div>
-                      <div className="p-2 bg-slate-950/90 flex items-center justify-between">
+                      <div className="p-2 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between">
                         <span className="text-[10px] font-bold text-slate-200 truncate">Fasilitas Bermain Ramah Anak</span>
                         <ZoomIn className="w-3 h-3 text-emerald-400 opacity-60 group-hover:opacity-100" />
                       </div>
@@ -940,7 +990,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             {/* ============================================================== */}
             {/* SLIDE 6: CAPAIAN KOMPONEN C (KEWIRAUSAHAAN & INOVASI)           */}
             {/* ============================================================== */}
-            {currentSlide === 5 && (
+            {activeSlide.type === 'core' && activeSlide.coreIndex === 5 && (
               <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                 
                 {/* Left 6 cols: Program Unggulan & MoU */}
@@ -988,7 +1038,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                   </div>
                 </div>
 
-                {/* Right 6 cols: Visual Kegiatan P5-RA & MoU */}
+                {/* Right 6 cols: Visual Kegiatan P5-RA & MoU - Foto Utuh Tidak Terpotong */}
                 <div className="md:col-span-6 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     
@@ -998,16 +1048,16 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                         url: data.photoEvidences.find(p => p.kategori.toLowerCase().includes('unggulan') || p.judul.toLowerCase().includes('inovasi'))?.fotoUrl || "/src/assets/images/foto_kegiatan_1_1792427218693.jpg", 
                         title: "Kegiatan P5-RA & Market Day Anak Usia Dini" 
                       })}
-                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-lg hover:border-emerald-500 transition-all"
+                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-lg hover:border-emerald-500 transition-all flex flex-col"
                     >
-                      <div className="aspect-[4/3] overflow-hidden">
+                      <div className="h-36 sm:h-44 w-full bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
                         <img 
                           src={data.photoEvidences.find(p => p.kategori.toLowerCase().includes('unggulan') || p.judul.toLowerCase().includes('inovasi'))?.fotoUrl || "/src/assets/images/foto_kegiatan_1_1792427218693.jpg"} 
                           alt="Kegiatan P5-RA" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                         />
                       </div>
-                      <div className="p-2 bg-slate-950/90 flex items-center justify-between">
+                      <div className="p-2 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between">
                         <span className="text-[10px] font-bold text-slate-200 truncate">Kegiatan P5-RA / Market Day</span>
                         <ZoomIn className="w-3 h-3 text-emerald-400 opacity-60 group-hover:opacity-100" />
                       </div>
@@ -1019,16 +1069,16 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                         url: data.photoEvidences.find(p => p.kategori.toLowerCase().includes('fasilitas') || p.kategori.toLowerCase().includes('lainnya'))?.fotoUrl || "/src/assets/images/foto_kegiatan_2_1792427228800.jpg", 
                         title: "Kerja Sama (MoU) dengan Puskesmas & Instansi Luar" 
                       })}
-                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-lg hover:border-emerald-500 transition-all"
+                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-lg hover:border-emerald-500 transition-all flex flex-col"
                     >
-                      <div className="aspect-[4/3] overflow-hidden">
+                      <div className="h-36 sm:h-44 w-full bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
                         <img 
                           src={data.photoEvidences.find(p => p.kategori.toLowerCase().includes('fasilitas') || p.kategori.toLowerCase().includes('lainnya'))?.fotoUrl || "/src/assets/images/foto_kegiatan_2_1792427228800.jpg"} 
                           alt="Kerja Sama Kemitraan" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                         />
                       </div>
-                      <div className="p-2 bg-slate-950/90 flex items-center justify-between">
+                      <div className="p-2 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between">
                         <span className="text-[10px] font-bold text-slate-200 truncate">MoU Kesehatan Puskesmas</span>
                         <ZoomIn className="w-3 h-3 text-emerald-400 opacity-60 group-hover:opacity-100" />
                       </div>
@@ -1058,7 +1108,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             {/* ============================================================== */}
             {/* SLIDE 7: CAPAIAN KOMPONEN D (SUPERVISI GURU & TENDIK)           */}
             {/* ============================================================== */}
-            {currentSlide === 6 && (
+            {activeSlide.type === 'core' && activeSlide.coreIndex === 6 && (
               <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                 
                 {/* Left 6 cols: Data Supervisi */}
@@ -1109,23 +1159,23 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                   </div>
                 </div>
 
-                {/* Right 6 cols: Foto Supervisi & Dokumen */}
+                {/* Right 6 cols: Foto Supervisi & Dokumen - Foto Utuh Tidak Terpotong */}
                 <div className="md:col-span-6 space-y-3">
                   <div 
                     onClick={() => setPreviewImage({ 
-                      url: data.photoEvidences.find(p => p.kategori.toLowerCase().includes('supervisi') || p.judul.toLowerCase().includes('supervisi'))?.fotoUrl || "/src/assets/images/foto_kegiatan_3_1792427238258.jpg", 
+                      url: institution.fotoSupervisiUrl || data.photoEvidences.find(p => p.kategori.toLowerCase().includes('supervisi') || p.judul.toLowerCase().includes('supervisi'))?.fotoUrl || "/src/assets/images/foto_kegiatan_3_1792427238258.jpg", 
                       title: "Dokumentasi Supervisi Langsung di Kelas oleh Kepala RA" 
                     })}
-                    className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-xl hover:border-emerald-500 transition-all"
+                    className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-xl hover:border-emerald-500 transition-all flex flex-col"
                   >
-                    <div className="aspect-[16/10] overflow-hidden">
+                    <div className="h-44 sm:h-52 w-full bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
                       <img 
-                        src={data.photoEvidences.find(p => p.kategori.toLowerCase().includes('supervisi') || p.judul.toLowerCase().includes('supervisi'))?.fotoUrl || "/src/assets/images/foto_kegiatan_3_1792427238258.jpg"} 
+                        src={institution.fotoSupervisiUrl || data.photoEvidences.find(p => p.kategori.toLowerCase().includes('supervisi') || p.judul.toLowerCase().includes('supervisi'))?.fotoUrl || "/src/assets/images/foto_kegiatan_3_1792427238258.jpg"} 
                         alt="Foto Supervisi" 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                        className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                       />
                     </div>
-                    <div className="p-3 bg-slate-950/90 flex items-center justify-between">
+                    <div className="p-3 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between">
                       <div>
                         <span className="text-xs font-bold text-white block">Dokumentasi Supervisi Kelas</span>
                         <p className="text-[10px] text-slate-400">Kepala RA mengamati pelaksanaan pembelajaran dan interaksi anak</p>
@@ -1156,7 +1206,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             {/* ============================================================== */}
             {/* SLIDE 8: HASIL KINERJA & PRESTASI (KOMPONEN E)                  */}
             {/* ============================================================== */}
-            {currentSlide === 7 && (
+            {activeSlide.type === 'core' && activeSlide.coreIndex === 7 && (
               <div className="h-full grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
                 
                 {/* Left 6 cols: Daftar Prestasi Siswa & Guru */}
@@ -1217,23 +1267,23 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                   </div>
                 </div>
 
-                {/* Right 6 cols: Foto Piagam & Tropi */}
+                {/* Right 6 cols: Foto Piagam & Tropi - Foto Utuh Tidak Terpotong */}
                 <div className="md:col-span-6 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     
                     {/* Sertifikat Akreditasi / Piagam */}
                     <div 
                       onClick={() => setPreviewImage({ url: accreditation.sertifikatUrl, title: "Sertifikat Akreditasi Resmi" })}
-                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-lg hover:border-amber-500 transition-all"
+                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-lg hover:border-amber-500 transition-all flex flex-col"
                     >
-                      <div className="aspect-[4/3] overflow-hidden">
+                      <div className="h-36 sm:h-44 w-full bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
                         <img 
                           src={accreditation.sertifikatUrl} 
                           alt="Sertifikat Akreditasi" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                         />
                       </div>
-                      <div className="p-2 bg-slate-950/90 flex items-center justify-between">
+                      <div className="p-2 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between">
                         <span className="text-[10px] font-bold text-amber-300 truncate">Sertifikat Akreditasi</span>
                         <ZoomIn className="w-3 h-3 text-amber-400 opacity-60 group-hover:opacity-100" />
                       </div>
@@ -1242,19 +1292,19 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                     {/* Foto Penyerahan Piala */}
                     <div 
                       onClick={() => setPreviewImage({ 
-                        url: data.photoEvidences.find(p => p.kategori.toLowerCase().includes('prestasi') || p.judul.toLowerCase().includes('juara'))?.fotoUrl || "/src/assets/images/foto_kegiatan_4_1792427248962.jpg", 
+                        url: institution.fotoTropiUrl || data.photoEvidences.find(p => p.kategori.toLowerCase().includes('prestasi') || p.judul.toLowerCase().includes('juara'))?.fotoUrl || "/src/assets/images/foto_kegiatan_4_1792427248962.jpg", 
                         title: "Foto Penyerahan Piala & Penghargaan Lomba" 
                       })}
-                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-lg hover:border-amber-500 transition-all"
+                      className="cursor-pointer group relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-lg hover:border-amber-500 transition-all flex flex-col"
                     >
-                      <div className="aspect-[4/3] overflow-hidden">
+                      <div className="h-36 sm:h-44 w-full bg-slate-950 flex items-center justify-center p-1.5 overflow-hidden">
                         <img 
-                          src={data.photoEvidences.find(p => p.kategori.toLowerCase().includes('prestasi') || p.judul.toLowerCase().includes('juara'))?.fotoUrl || "/src/assets/images/foto_kegiatan_4_1792427248962.jpg"} 
+                          src={institution.fotoTropiUrl || data.photoEvidences.find(p => p.kategori.toLowerCase().includes('prestasi') || p.judul.toLowerCase().includes('juara'))?.fotoUrl || "/src/assets/images/foto_kegiatan_4_1792427248962.jpg"} 
                           alt="Piala Penghargaan" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                          className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform duration-300" 
                         />
                       </div>
-                      <div className="p-2 bg-slate-950/90 flex items-center justify-between">
+                      <div className="p-2 bg-slate-950/95 border-t border-slate-800 flex items-center justify-between">
                         <span className="text-[10px] font-bold text-slate-200 truncate">Dokumentasi Tropi & Lomba</span>
                         <ZoomIn className="w-3 h-3 text-amber-400 opacity-60 group-hover:opacity-100" />
                       </div>
@@ -1284,7 +1334,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             {/* ============================================================== */}
             {/* SLIDE 9: ANALISIS SWOT RINGKAS & RENCANA TINDAK LANJUT (RTL)   */}
             {/* ============================================================== */}
-            {currentSlide === 8 && (
+            {activeSlide.type === 'core' && activeSlide.coreIndex === 8 && (
               <div className="h-full flex flex-col justify-between space-y-4">
                 
                 {/* 4 Quadrant Mini SWOT */}
@@ -1443,9 +1493,122 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             )}
 
             {/* ============================================================== */}
-            {/* SLIDE 10: BAGIAN PENUTUP (FOTO BERSAMA & KALIMAT PENUTUP)       */}
+            {/* DEDICATED SLIDES: DOKUMENTASI FOTO KEGIATAN & BUKTI FISIK      */}
             {/* ============================================================== */}
-            {currentSlide === 9 && (
+            {activeSlide.type === 'photo_evidence' && activeSlide.photoData && (
+              <div className="h-full flex flex-col justify-between py-1">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center flex-1 my-auto">
+                  
+                  {/* Big High-Res Uncropped Photo Canvas (7 cols on lg) */}
+                  <div className="lg:col-span-7 flex flex-col justify-center">
+                    <div 
+                      onClick={() => setPreviewImage({ 
+                        url: activeSlide.photoData!.fotoUrl, 
+                        title: activeSlide.photoData!.judul 
+                      })}
+                      className="cursor-pointer group relative rounded-2xl overflow-hidden border-2 border-slate-700/80 bg-slate-950 shadow-2xl hover:border-emerald-500 transition-all flex flex-col items-center justify-center p-2.5 sm:p-4 min-h-[260px] sm:min-h-[340px] md:min-h-[420px]"
+                    >
+                      {/* Uncropped Image Display: Preserves Exact Aspect Ratio (square, rectangle, vertical) */}
+                      <div className="w-full flex-1 flex items-center justify-center overflow-hidden max-h-[55vh]">
+                        <img 
+                          src={activeSlide.photoData.fotoUrl} 
+                          alt={activeSlide.photoData.judul} 
+                          className="max-h-full max-w-full object-contain group-hover:scale-101 transition-transform duration-300 drop-shadow-2xl" 
+                        />
+                      </div>
+
+                      <div className="absolute top-3 right-3 bg-slate-950/85 backdrop-blur-md border border-slate-700/90 rounded-lg px-2.5 py-1 text-[11px] text-emerald-300 flex items-center gap-1.5 opacity-85 group-hover:opacity-100 shadow-md">
+                        <ZoomIn className="w-3.5 h-3.5" />
+                        <span className="font-semibold">Klik Ukuran Penuh (HD)</span>
+                      </div>
+
+                      <div className="w-full pt-2 mt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                        <span className="truncate max-w-[240px] font-mono text-[10px] text-slate-500">
+                          ID: {activeSlide.photoData.id}
+                        </span>
+                        <span className="text-emerald-400 font-medium">Resolusi Asli • Tanpa Pemotongan</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Photo Documentation Details & Context (5 cols on lg) */}
+                  <div className="lg:col-span-5 space-y-3.5 flex flex-col justify-center">
+                    
+                    {/* Category & Date Header */}
+                    <div className="bg-slate-900/90 border border-emerald-900/60 rounded-xl p-4 shadow-xl space-y-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-950 text-emerald-300 border border-emerald-700/80">
+                          <Tag className="w-3.5 h-3.5 text-amber-400" />
+                          {activeSlide.photoData.kategori}
+                        </span>
+                        {activeSlide.photoData.tanggal && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-950 text-slate-300 border border-slate-800">
+                            <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                            {activeSlide.photoData.tanggal}
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">
+                          DOKUMENTASI KEGIATAN & BUKTI FISIK
+                        </span>
+                        <h3 className="text-base sm:text-lg font-extrabold text-white leading-snug">
+                          {activeSlide.photoData.judul}
+                        </h3>
+                      </div>
+
+                      {activeSlide.photoData.deskripsi ? (
+                        <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
+                          <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block mb-1">
+                            Keterangan & Uraian Kegiatan:
+                          </span>
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line">
+                            {activeSlide.photoData.deskripsi}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg text-xs text-slate-400 italic">
+                          Dokumentasi bukti fisik pendukung penilaian kinerja berkala kepala madrasah.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Verification Status Card */}
+                    <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Lembaga Terkait:</span>
+                        <span className="font-bold text-white truncate max-w-[180px]">{institutionName}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Tahun Pelajaran:</span>
+                        <span className="font-mono font-semibold text-emerald-400">{institution.tahunPelajaran}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Status Validasi:</span>
+                        <span className="font-bold text-amber-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          Terlampir Bukti Fisik Resmi
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick Nav hint */}
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+                      <span>Foto Bukti {(activeSlide.photoIndex || 0) + 1} dari {photoSlides.length}</span>
+                      <span className="text-slate-500">Gunakan panah untuk lanjut ke slide berikutnya</span>
+                    </div>
+
+                  </div>
+
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* SLIDE PENUTUP: FOTO BERSAMA & KALIMAT PENUTUP                   */}
+            {/* ============================================================== */}
+            {activeSlide.type === 'closing' && (
               <div className="h-full flex flex-col justify-between py-2 text-center">
                 
                 {/* Header Text */}
@@ -1458,21 +1621,23 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                   </h2>
                 </div>
 
-                {/* Big Group Photo of Teachers, Staff & Committee */}
+                {/* Big Group Photo of Teachers, Staff & Committee - Foto Utuh Tidak Terpotong & Tidak Gepeng */}
                 <div className="my-auto max-w-4xl mx-auto w-full">
                   <div 
                     onClick={() => setPreviewImage({ 
                       url: fotoBersama, 
                       title: "Dokumentasi Foto Bersama Seluruh Guru, Staf & Komite RA" 
                     })}
-                    className="cursor-pointer group relative rounded-2xl overflow-hidden border-2 border-emerald-500/60 bg-slate-900 shadow-2xl hover:border-emerald-400 transition-all max-h-[260px] sm:max-h-[300px]"
+                    className="cursor-pointer group relative rounded-2xl overflow-hidden border-2 border-emerald-500/60 bg-slate-950 shadow-2xl hover:border-emerald-400 transition-all flex flex-col"
                   >
-                    <img 
-                      src={fotoBersama} 
-                      alt="Dewan Guru & Komite" 
-                      className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500 max-h-[260px] sm:max-h-[300px]" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent flex items-end justify-between p-3 sm:p-4">
+                    <div className="h-56 sm:h-64 md:h-72 w-full bg-slate-950 flex items-center justify-center p-2 overflow-hidden">
+                      <img 
+                        src={fotoBersama} 
+                        alt="Dewan Guru & Komite" 
+                        className="max-h-full max-w-full object-contain group-hover:scale-101 transition-transform duration-300" 
+                      />
+                    </div>
+                    <div className="bg-slate-950/95 border-t border-slate-800 flex items-end justify-between p-3 sm:p-4">
                       <div className="text-left">
                         <span className="text-xs sm:text-sm font-bold text-white block">
                           Dewan Guru, Tenaga Kependidikan & Pengurus Komite RA
@@ -1519,21 +1684,21 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
               </span>
               <span className="hidden sm:inline text-slate-600">•</span>
               <span className="hidden sm:inline text-slate-400">
-                Slide {currentSlide + 1} dari {totalSlides} ({slides[currentSlide].category})
+                Slide {currentSlide + 1} dari {totalSlides} ({activeSlide.category})
               </span>
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-slate-500 text-[10px]">Gunakan panah ◀ ▶ keyboard untuk navigasi</span>
-              <div className="flex items-center gap-1">
+              <span className="text-slate-500 text-[10px] hidden md:inline">Gunakan panah ◀ ▶ keyboard untuk navigasi</span>
+              <div className="flex items-center gap-1 max-w-[160px] sm:max-w-xs md:max-w-md overflow-x-auto py-1 custom-scrollbar">
                 {slides.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentSlide(i)}
-                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                      currentSlide === i ? 'w-6 bg-emerald-400' : 'w-2 bg-slate-700 hover:bg-slate-500'
+                    className={`h-1.5 shrink-0 rounded-full transition-all cursor-pointer ${
+                      currentSlide === i ? 'w-5 bg-emerald-400' : 'w-2 bg-slate-700 hover:bg-slate-500'
                     }`}
-                    title={`Lompat ke Slide ${i + 1}`}
+                    title={`Lompat ke Slide ${i + 1}: ${slides[i].title}`}
                   />
                 ))}
               </div>
@@ -1544,15 +1709,20 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
       </main>
 
       {/* ============================================================== */}
-      {/* 10 SLIDES THUMBNAIL DRAWER                                      */}
+      {/* FULL SLIDES THUMBNAIL DRAWER                                    */}
       {/* ============================================================== */}
       {showThumbnails && (
-        <aside className="no-print fixed bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-700/80 p-3 z-50 shadow-2xl">
-          <div className="max-w-6xl mx-auto flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
-            <span className="text-xs font-bold text-white flex items-center gap-2">
+        <aside className="no-print fixed bottom-0 inset-x-0 bg-slate-900/98 backdrop-blur-md border-t border-slate-700/80 p-3 z-50 shadow-2xl">
+          <div className="max-w-7xl mx-auto flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+            <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-emerald-400" />
-              Urutan Lengkap 10 Slide Presentasi PKKM RA:
-            </span>
+              <span className="text-xs font-bold text-white">
+                Daftar Lengkap {totalSlides} Slide Presentasi PKKM RA:
+              </span>
+              <span className="text-[11px] text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">
+                9 Slide Inti + {photoSlides.length} Slide Foto Kegiatan + 1 Slide Penutup
+              </span>
+            </div>
             <button
               onClick={() => setShowThumbnails(false)}
               className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 cursor-pointer text-xs flex items-center gap-1"
@@ -1562,7 +1732,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
             </button>
           </div>
 
-          <div className="max-w-6xl mx-auto grid grid-cols-5 md:grid-cols-10 gap-2 overflow-x-auto pb-1">
+          <div className="max-w-7xl mx-auto max-h-72 overflow-y-auto grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 pb-1 pr-1 custom-scrollbar">
             {slides.map((s, idx) => (
               <button
                 key={s.id}
@@ -1570,16 +1740,27 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
                   setCurrentSlide(idx);
                   setShowThumbnails(false);
                 }}
-                className={`p-2 rounded-lg text-left transition-all border cursor-pointer ${
+                className={`p-2 rounded-lg text-left transition-all border cursor-pointer flex flex-col justify-between ${
                   currentSlide === idx 
                     ? 'bg-emerald-950 border-emerald-500 text-white shadow-md ring-1 ring-emerald-400' 
                     : 'bg-slate-950/80 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                 }`}
               >
                 <div className="flex items-center justify-between text-[9px] font-mono font-bold mb-1">
-                  <span>0{s.number}</span>
+                  <span>{s.number < 10 ? '0' + s.number : s.number}</span>
                   <span className="text-amber-400 truncate text-[8px]">{s.category}</span>
                 </div>
+
+                {s.photoData?.fotoUrl && (
+                  <div className="h-10 w-full rounded bg-slate-900 border border-slate-800 mb-1 flex items-center justify-center overflow-hidden">
+                    <img 
+                      src={s.photoData.fotoUrl} 
+                      alt={s.title} 
+                      className="max-h-full max-w-full object-contain" 
+                    />
+                  </div>
+                )}
+
                 <div className="text-[10px] font-semibold truncate leading-tight">
                   {s.title}
                 </div>

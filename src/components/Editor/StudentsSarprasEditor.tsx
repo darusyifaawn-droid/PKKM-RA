@@ -245,11 +245,11 @@ export const StudentsSarprasEditor: React.FC<StudentsSarprasEditorProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {buildings.filter(b => b.fotoUrl).slice(0, 3).map((b, idx) => (
                 <div key={b.id || idx} className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 flex flex-col">
-                  <div className="aspect-16/9 w-full bg-slate-200 relative overflow-hidden group">
+                  <div className="h-44 w-full bg-slate-100 relative overflow-hidden group flex items-center justify-center p-1 border-b border-slate-200">
                     <img 
                       src={b.fotoUrl} 
                       alt={b.jenisBangunan} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                      className="max-h-full max-w-full object-contain group-hover:scale-102 transition-transform" 
                     />
                     <div className="absolute top-2 left-2 bg-emerald-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
                       {b.jenisBangunan}
@@ -560,12 +560,12 @@ export const StudentsSarprasEditor: React.FC<StudentsSarprasEditorProps> = ({
                 </span>
                 <span className="text-[11px] text-slate-500 mb-3">Tampilan antarmuka beranda website portal & PPDB</span>
 
-                <div className="w-full aspect-16/9 rounded-lg bg-white border border-slate-300 overflow-hidden mb-3 shadow-xs relative flex items-center justify-center group">
+                <div className="w-full h-44 rounded-lg bg-white border border-slate-300 overflow-hidden mb-3 shadow-xs relative flex items-center justify-center p-1 group">
                   {institution?.websiteScreenshotUrl ? (
                     <img
                       src={institution.websiteScreenshotUrl}
                       alt="Beranda Website"
-                      className="w-full h-full object-cover"
+                      className="max-h-full max-w-full object-contain"
                     />
                   ) : (
                     <div className="text-center p-4">
@@ -606,12 +606,12 @@ export const StudentsSarprasEditor: React.FC<StudentsSarprasEditorProps> = ({
                 </span>
                 <span className="text-[11px] text-slate-500 mb-3">Tampilan portal absensi, jadwal & buku penghubung</span>
 
-                <div className="w-full aspect-16/9 rounded-lg bg-white border border-slate-300 overflow-hidden mb-3 shadow-xs relative flex items-center justify-center group">
+                <div className="w-full h-44 rounded-lg bg-white border border-slate-300 overflow-hidden mb-3 shadow-xs relative flex items-center justify-center p-1 group">
                   {institution?.portalSiswaScreenshotUrl ? (
                     <img
                       src={institution.portalSiswaScreenshotUrl}
                       alt="Portal Siswa"
-                      className="w-full h-full object-cover"
+                      className="max-h-full max-w-full object-contain"
                     />
                   ) : (
                     <div className="text-center p-4">
