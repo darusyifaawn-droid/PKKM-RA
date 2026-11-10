@@ -26,6 +26,8 @@ import {
   MonitorPlay
 } from 'lucide-react';
 
+import { loadPkkmData, savePkkmData, clearPkkmData } from './utils/storage';
+
 const STORAGE_KEY = 'SIM_PKKM_DATA_V2';
 
 export default function App() {
@@ -34,7 +36,6 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('SIM_PPKM_DATA_V1');
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Ensure structuralPositions and manualScoreOverride exist
         return {
           ...DEFAULT_PPKM_DATA,
           ...parsed,
@@ -44,7 +45,7 @@ export default function App() {
         };
       }
     } catch (e) {
-      console.error('Failed to parse saved PKKM data:', e);
+      console.error('Failed to parse initial LocalStorage PKKM data:', e);
     }
     return DEFAULT_PPKM_DATA;
   });
@@ -55,22 +56,37 @@ export default function App() {
 
   const [saveStatus, setSaveStatus] = useState<string>('');
 
-  // Auto-save to localStorage
+  // Load from IndexedDB on initial mount (supports large photo datasets)
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      setSaveStatus('Tersimpan otomatis');
-      const timer = setTimeout(() => setSaveStatus(''), 2500);
-      return () => clearTimeout(timer);
-    } catch (e) {
-      console.warn('Storage quota or error:', e);
-    }
+    let isMounted = true;
+    loadPkkmData().then((loadedData) => {
+      if (isMounted && loadedData) {
+        setData(loadedData);
+      }
+    }).catch((err) => console.warn('IndexedDB initial load warning:', err));
+    return () => { isMounted = false; };
+  }, []);
+
+  // Auto-save to IndexedDB + LocalStorage whenever data changes
+  useEffect(() => {
+    let isMounted = true;
+    savePkkmData(data).then(() => {
+      if (isMounted) {
+        setSaveStatus('Tersimpan otomatis');
+        const timer = setTimeout(() => setSaveStatus(''), 2500);
+        return () => clearTimeout(timer);
+      }
+    }).catch((e) => {
+      console.warn('Auto-save error:', e);
+    });
   }, [data]);
 
-  const handleResetData = () => {
-    if (confirm('Reset semua formulir ke data standar MIN 8 Cirebon?')) {
+  const handleResetData = async () => {
+    if (confirm('Apakah Anda yakin ingin mengembalikan semua formulir ke pengaturan standar? Semua input data & foto yang diunggah akan dihapus dari penyimpanan browser.')) {
+      await clearPkkmData();
       setData(DEFAULT_PPKM_DATA);
-      localStorage.removeItem(STORAGE_KEY);
+      setSaveStatus('Data berhasil di-reset ke standar');
+      setTimeout(() => setSaveStatus(''), 3000);
     }
   };
 

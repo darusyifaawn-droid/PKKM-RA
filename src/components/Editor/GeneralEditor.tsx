@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { compressImageFile } from '../../utils/imageCompressor';
 import { InstitutionProfile, PrincipalProfile, EvaluatorProfile, SocialMediaInfo, AccreditationDetail } from '../../types/ppkm';
 import { 
   Building2, 
@@ -44,20 +45,19 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
   const closingPhotoInputRef = useRef<HTMLInputElement>(null);
   const accreditationCertInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = (
+  const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     callback: (dataUrl: string) => void
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (typeof event.target?.result === 'string') {
-        callback(event.target.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressedDataUrl = await compressImageFile(file);
+      callback(compressedDataUrl);
+    } catch (err) {
+      console.error('Failed to compress image:', err);
+    }
   };
 
   return (

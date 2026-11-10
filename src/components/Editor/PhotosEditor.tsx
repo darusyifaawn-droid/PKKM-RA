@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { compressImageFile } from '../../utils/imageCompressor';
 import { PhotoEvidenceItem, InstitutionProfile } from '../../types/ppkm';
 import { 
   Camera, 
@@ -58,20 +59,19 @@ export const PhotosEditor: React.FC<PhotosEditorProps> = ({
   const mouInputRef = useRef<HTMLInputElement>(null);
   const closingInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = (
+  const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     callback: (dataUrl: string) => void
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (typeof event.target?.result === 'string') {
-        callback(event.target.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressedDataUrl = await compressImageFile(file);
+      callback(compressedDataUrl);
+    } catch (err) {
+      console.error('Failed to compress image:', err);
+    }
     if (e.target) e.target.value = '';
   };
 
@@ -109,33 +109,29 @@ export const PhotosEditor: React.FC<PhotosEditorProps> = ({
     extraCallback?.();
   };
 
-  const handleMultipleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMultipleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const newItems: PhotoEvidenceItem[] = [];
-    let count = 0;
-
-    Array.from(files).forEach((file, index) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (typeof event.target?.result === 'string') {
-          newItems.push({
+    const fileList = Array.from(files);
+    try {
+      const compressedItems: PhotoEvidenceItem[] = await Promise.all(
+        fileList.map(async (file, index) => {
+          const compressedDataUrl = await compressImageFile(file);
+          return {
             id: 'photo_' + Date.now() + '_' + index,
             kategori: activeUploadCategory,
             judul: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
             deskripsi: 'Dokumentasi bukti fisik kegiatan madrasah yang diverifikasi untuk PKKM.',
             tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-            fotoUrl: event.target.result,
-          });
-          count++;
-          if (count === files.length) {
-            onUpdatePhotoEvidences([...newItems, ...photoEvidences]);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+            fotoUrl: compressedDataUrl,
+          };
+        })
+      );
+      onUpdatePhotoEvidences([...compressedItems, ...photoEvidences]);
+    } catch (err) {
+      console.error('Failed to compress batch images:', err);
+    }
 
     if (e.target) e.target.value = '';
   };
