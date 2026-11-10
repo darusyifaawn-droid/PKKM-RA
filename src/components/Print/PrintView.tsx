@@ -61,7 +61,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
   const komitePos = structural.find(p => p.jabatan.toLowerCase().includes('komite'))?.nama || evaluators.komiteNama;
   const kepalaPos = structural.find(p => p.jabatan.toLowerCase().includes('kepala'))?.nama || principal.namaLengkap;
   const pengawasPos = structural.find(p => p.jabatan.toLowerCase().includes('pengawas'))?.nama || evaluators.pengawas1Nama;
-  const tuPos = structural.find(p => p.jabatan.toLowerCase().includes('tata usaha') || p.jabatan.toLowerCase().includes('tu'))?.nama || 'Mufroni, S.Pd';
+  const tuPos = structural.find(p => p.jabatan.toLowerCase().includes('tata usaha') || p.jabatan.toLowerCase().includes('tu'))?.nama || 'Muhamad Nugi Andri, S.H';
   const bendaharaPos = structural.find(p => p.jabatan.toLowerCase().includes('bendahara'))?.nama || 'Rini Ariyani, S.Pd';
   const seksiList = structural.filter(p => p.tingkat === 'Seksi');
 
@@ -73,7 +73,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-200/60 py-6 sm:py-8 font-sans">
+    <div className="min-h-screen bg-white py-6 sm:py-8 font-sans">
       
       {/* ============================================================== */}
       {/* FLOATING ACTION TOOLBAR (Hidden in Print)                      */}
@@ -1519,7 +1519,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ data, onBackToEdit }) => {
                 <div>
                   <p className="font-semibold">Operator / Pengelola IT Lembaga,</p>
                   <div className="h-12" />
-                  <p className="font-bold underline">Mufroni, S.Pd</p>
+                  <p className="font-bold underline">Muhamad Nugi Andri, S.H</p>
                   <p className="font-mono text-[9px]">Pengelola Data EMIS & TIK</p>
                 </div>
 

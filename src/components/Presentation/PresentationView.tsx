@@ -339,11 +339,11 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
 
           <button
             onClick={() => window.print()}
-            className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Cetak Dokumen PKKM Lengkap"
+            className="p-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs font-semibold bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-600 flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+            title="Cetak / Simpan PPT Presentasi ke File PDF Presisi (16:9 Lanskap)"
           >
-            <Printer className="w-3.5 h-3.5 text-slate-300" />
-            <span className="hidden sm:inline">Cetak</span>
+            <Printer className="w-3.5 h-3.5 text-emerald-300" />
+            <span className="hidden sm:inline">Cetak / Download PDF PPT</span>
           </button>
 
           <button
@@ -359,7 +359,7 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
       {/* ============================================================== */}
       {/* SLIDE CANVAS (16:9 RATIO PRESENTATION THEME)                    */}
       {/* ============================================================== */}
-      <main className="flex-1 flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8">
+      <main className="no-print flex-1 flex items-center justify-center p-2 sm:p-4 md:p-6 lg:p-8">
         <div className="w-full max-w-6xl aspect-[16/9] bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/80 border border-emerald-900/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col relative transition-all duration-300">
           
           {/* Subtle Top Accent Ribbon */}
@@ -1815,6 +1815,222 @@ export const PresentationView: React.FC<PresentationViewProps> = ({ data, onBack
           </div>
         </div>
       )}
+
+      {/* ============================================================== */}
+      {/* DEDICATED PRINT CONTAINER FOR PPT PDF EXPORT                   */}
+      {/* Renders all slides in sequence 16:9 Landscape 1 slide per page */}
+      {/* ============================================================== */}
+      <div className="hidden print:block w-full text-slate-100 font-sans">
+        <style>{`
+          @media print {
+            @page {
+              size: A4 landscape !important;
+              margin: 0 !important;
+            }
+            body {
+              background-color: #020617 !important;
+              color: #f8fafc !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .no-print {
+              display: none !important;
+            }
+            .ppt-print-slide {
+              width: 100vw !important;
+              height: 100vh !important;
+              max-width: 100vw !important;
+              max-height: 100vh !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              box-sizing: border-box !important;
+              padding: 20px !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: space-between !important;
+              background: linear-gradient(to bottom right, #0f172a, #020617, #064e3b) !important;
+              overflow: hidden !important;
+            }
+          }
+        `}</style>
+
+        {slides.map((s, slideIdx) => (
+          <div key={`ppt_pdf_slide_${s.id}_${slideIdx}`} className="ppt-print-slide">
+            {/* Slide Header */}
+            {s.type !== 'core' || s.coreIndex !== 0 ? (
+              <div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-950 border border-emerald-800 flex items-center justify-center text-emerald-400 font-bold font-mono text-xs">
+                    {s.number < 10 ? '0' + s.number : s.number}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                        {s.category}
+                      </span>
+                      <span className="text-slate-600">•</span>
+                      <span className="text-[10px] font-semibold text-slate-400">
+                        {s.subtitle}
+                      </span>
+                    </div>
+                    <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                      {s.title}
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={institution.logoUrl} 
+                    alt={institutionName} 
+                    className="w-6 h-6 object-contain bg-white/10 rounded p-0.5" 
+                  />
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold text-slate-300 leading-tight">{institutionName}</p>
+                    <p className="text-[9px] text-emerald-400 font-mono">PKKM {institution.periodePenilaian}</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Slide Body */}
+            <div className="flex-1 p-3 overflow-hidden flex flex-col justify-center">
+              {s.type === 'core' && s.coreIndex === 0 && (
+                <div className="h-full flex flex-col justify-between py-2 text-center relative">
+                  <div className="flex items-center justify-center gap-8">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 p-1 bg-white/10 rounded-xl border border-white/20 flex items-center justify-center shadow-lg">
+                        <img 
+                          src={institution.logoKemenagUrl || "/src/assets/images/logo_kemenag_1792427181313.png"} 
+                          alt="Logo Kemenag" 
+                          className="max-h-full max-w-full object-contain" 
+                        />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">
+                          KEMENTERIAN AGAMA RI
+                        </p>
+                        <p className="text-[9px] text-slate-300">
+                          Kantor Kemenag {institution.kotaKab}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="h-10 w-px bg-slate-800" />
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 p-1 bg-white/10 rounded-xl border border-white/20 flex items-center justify-center shadow-lg">
+                        <img 
+                          src={institution.logoUrl} 
+                          alt="Logo Lembaga" 
+                          className="max-h-full max-w-full object-contain" 
+                        />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-[10px] font-bold text-amber-400 uppercase">
+                          LEMBAGA RA / MADRASAH
+                        </p>
+                        <p className="text-[9px] text-slate-300 truncate max-w-[180px]">
+                          {institutionName}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="my-auto py-3 space-y-2 max-w-3xl mx-auto">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-700 text-emerald-300 text-xs font-semibold mb-1">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Laporan Resmi Kinerja Tahunan Raudlatul Athfal (RA)</span>
+                    </div>
+
+                    <h1 className="text-2xl font-extrabold text-white tracking-tight leading-tight uppercase">
+                      Presentasi Laporan Kinerja Kepala RA <span className="text-emerald-400">{institutionName}</span>
+                    </h1>
+
+                    <p className="text-sm font-bold text-amber-300 uppercase tracking-wider">
+                      Penilaian Kinerja Kepala Madrasah (PKKM) Tahun Pelajaran {institution.tahunPelajaran}
+                    </p>
+
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      {institution.periodePenilaian} • Disusun Berdasarkan Juknis Dirjen Pendis Kemenag RI
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 max-w-3xl mx-auto w-full pt-1">
+                    <div className="bg-slate-900/80 border border-emerald-900/60 rounded-xl p-3 flex items-center gap-3 text-left">
+                      <div className="w-14 h-16 rounded-lg overflow-hidden border border-emerald-500/60 shrink-0 bg-slate-950 flex items-center justify-center p-0.5">
+                        <img src={principal.fotoUrl} alt={principal.namaLengkap} className="max-h-full max-w-full object-contain" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[9px] font-bold text-emerald-400 uppercase block">Kepala Raudlatul Athfal</span>
+                        <h3 className="text-xs font-bold text-white truncate">{principal.namaLengkap}</h3>
+                        <p className="text-[9px] text-slate-400 font-mono">NIP: {principal.nip}</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-left flex flex-col justify-center">
+                      <span className="text-[9px] font-bold text-amber-400 uppercase block mb-1">Tim Penilai PKKM {institution.kotaKab}</span>
+                      <div className="space-y-0.5 text-[10px]">
+                        <div className="flex justify-between"><span className="text-slate-400">Penilai 1:</span><strong className="text-slate-200">{evaluators.pengawas1Nama}</strong></div>
+                        <div className="flex justify-between"><span className="text-slate-400">Penilai 2:</span><strong className="text-slate-200">{evaluators.pengawas2Nama}</strong></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {s.type === 'photo_evidence' && s.photoData && (
+                <div className="h-full grid grid-cols-12 gap-5 items-center">
+                  <div className="col-span-7 flex flex-col justify-center items-center">
+                    <div className="w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-950 p-3 flex items-center justify-center max-h-[55vh]">
+                      <img src={s.photoData.fotoUrl} alt={s.photoData.judul} className="max-h-full max-w-full object-contain rounded drop-shadow-xl" />
+                    </div>
+                  </div>
+                  <div className="col-span-5 space-y-3">
+                    <span className="inline-block px-3 py-1 rounded text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
+                      {s.photoData.kategori}
+                    </span>
+                    <h3 className="text-base font-extrabold text-white leading-snug">{s.photoData.judul}</h3>
+                    {s.photoData.deskripsi ? (
+                      <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg">
+                        <span className="text-[10px] font-bold text-amber-400 uppercase block mb-1">Uraian Kegiatan:</span>
+                        <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-line">{s.photoData.deskripsi}</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic bg-slate-950/80 p-3 rounded border border-slate-800">
+                        Dokumentasi bukti fisik pendukung Penilaian Kinerja Kepala Madrasah.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(s.type !== 'core' || s.coreIndex !== 0) && s.type !== 'photo_evidence' && (
+                <div className="h-full flex flex-col justify-center py-2">
+                  <div className="bg-slate-900/90 border border-emerald-900/60 rounded-xl p-5 shadow-xl space-y-3">
+                    <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">{s.category} • {s.subtitle}</span>
+                    <h3 className="text-lg font-extrabold text-white">{s.title}</h3>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Dokumentasi dan pelaporan resmi kinerja {institutionName} untuk Tahun Pelajaran {institution.tahunPelajaran}.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Slide Footer */}
+            <div className="px-4 py-1.5 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400 font-mono shrink-0">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                SIM-PKKM RA • Sistem Penilaian Kinerja Kepala Madrasah Terpadu
+              </span>
+              <span>
+                Slide {s.number} dari {totalSlides} ({s.category})
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
 
     </div>
   );
