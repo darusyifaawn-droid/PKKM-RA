@@ -99,6 +99,10 @@ export async function loadPkkmData(): Promise<PpkmData> {
       return {
         ...DEFAULT_PPKM_DATA,
         ...idbData,
+        adminDocs: {
+          ...DEFAULT_PPKM_DATA.adminDocs!,
+          ...(idbData.adminDocs || {}),
+        },
         structuralPositions:
           idbData.structuralPositions && idbData.structuralPositions.length > 0
             ? idbData.structuralPositions
@@ -118,6 +122,10 @@ export async function loadPkkmData(): Promise<PpkmData> {
         return {
           ...DEFAULT_PPKM_DATA,
           ...parsed,
+          adminDocs: {
+            ...DEFAULT_PPKM_DATA.adminDocs!,
+            ...(parsed.adminDocs || {}),
+          },
           structuralPositions:
             parsed.structuralPositions && parsed.structuralPositions.length > 0
               ? parsed.structuralPositions

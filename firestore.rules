@@ -1,0 +1,744 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================
+    // HARDENED PRIMITIVE HELPERS
+    // =========================================================
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isSuperAdminEmail() {
+      return isVerifiedUser() &&
+        request.auth.token.email is string &&
+        request.auth.token.email.lower() == 'darusyifa.awn@gmail.com';
+    }
+
+    function isSuperAdmin() {
+      return isSuperAdminEmail() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function membershipPath(instId) {
+      return /databases/$(database)/documents/memberships/$(request.auth.uid + '_' + instId);
+    }
+
+    function hasActiveMembership(instId) {
+      return isVerifiedUser() &&
+        isValidId(instId) &&
+        exists(membershipPath(instId)) &&
+        get(membershipPath(instId)).data.status == 'active';
+    }
+
+    function memberRole(instId) {
+      return get(membershipPath(instId)).data.role;
+    }
+
+    function isInstitutionAdmin(instId) {
+      return hasActiveMembership(instId) && memberRole(instId) in ['ADMIN_LEMBAGA', 'SUPER_ADMIN'];
+    }
+
+    function isInstitutionEditor(instId) {
+      return hasActiveMembership(instId) && memberRole(instId) in ['ADMIN_LEMBAGA', 'KEPALA_RA', 'SUPER_ADMIN'];
+    }
+
+    function isPenilai1(instId) {
+      return hasActiveMembership(instId) && memberRole(instId) == 'PENILAI_1';
+    }
+
+    function isPenilai2(instId) {
+      return hasActiveMembership(instId) && memberRole(instId) == 'PENILAI_2';
+    }
+
+    function institutionExists(instId) {
+      return isValidId(instId) && exists(/databases/$(database)/documents/institutions/$(instId));
+    }
+
+    function periodExists(periodId) {
+      return isValidId(periodId) && exists(/databases/$(database)/documents/assessmentPeriods/$(periodId));
+    }
+
+    function getPeriod(periodId) {
+      return get(/databases/$(database)/documents/assessmentPeriods/$(periodId)).data;
+    }
+
+    function isAuthorizedUidsList(listVal) {
+      return listVal is list && listVal.size() >= 1 && listVal.size() <= 25 && listVal[0] is string;
+    }
+
+    // =========================================================
+    // VALIDATION BLUEPRINTS
+    // =========================================================
+    function isValidUserPublic(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'globalRole', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'activeInstitutionId', 'globalRole', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid == userId && data.uid.size() <= 128 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 160 &&
+        (!('activeInstitutionId' in data) || (data.activeInstitutionId is string && data.activeInstitutionId.size() <= 128)) &&
+        data.globalRole in ['USER', 'SUPER_ADMIN'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivate(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'phone', 'photoUrl', 'updatedAt']) &&
+        data.uid is string && data.uid == userId && data.uid.size() <= 128 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 40)) &&
+        (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 1000)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidInstitution(data, instId) {
+      return data.keys().hasAll(['institutionId', 'name', 'status', 'ownerUid', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['institutionId', 'name', 'nsm', 'npsn', 'status', 'expiresAt', 'ownerUid', 'authorizedUids', 'profileData', 'createdAt', 'updatedAt']) &&
+        data.institutionId is string && data.institutionId == instId && isValidId(data.institutionId) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 200 &&
+        (!('nsm' in data) || (data.nsm is string && data.nsm.size() <= 32)) &&
+        (!('npsn' in data) || (data.npsn is string && data.npsn.size() <= 32)) &&
+        data.status in ['active', 'inactive'] &&
+        (!('expiresAt' in data) || (data.expiresAt is string && data.expiresAt.size() <= 40)) &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        (!('profileData' in data) || data.profileData is map) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMembership(data, memId) {
+      return data.keys().hasAll(['membershipId', 'uid', 'institutionId', 'displayName', 'role', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['membershipId', 'uid', 'institutionId', 'displayName', 'userEmail', 'role', 'status', 'inviteId', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.membershipId is string && data.membershipId == memId && memId == (data.uid + '_' + data.institutionId) &&
+        isValidId(data.uid) &&
+        isValidId(data.institutionId) &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 160 &&
+        (!('userEmail' in data) || (data.userEmail is string && data.userEmail.size() <= 200)) &&
+        data.role in ['SUPER_ADMIN', 'ADMIN_LEMBAGA', 'KEPALA_RA', 'PENILAI_1', 'PENILAI_2'] &&
+        data.status in ['active', 'inactive'] &&
+        (!('inviteId' in data) || (data.inviteId is string && data.inviteId.size() <= 128)) &&
+        (!('authorizedUids' in data) || isAuthorizedUidsList(data.authorizedUids)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTeamInvitation(data, invId) {
+      return data.keys().hasAll(['inviteId', 'institutionId', 'invitedEmail', 'displayName', 'role', 'status', 'invitedBy', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['inviteId', 'institutionId', 'institutionName', 'invitedEmail', 'displayName', 'role', 'status', 'invitedBy', 'claimedByUid', 'claimedAt', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.inviteId is string && data.inviteId == invId && isValidId(data.inviteId) &&
+        isValidId(data.institutionId) &&
+        (!('institutionName' in data) || (data.institutionName is string && data.institutionName.size() <= 200)) &&
+        data.invitedEmail is string && data.invitedEmail.size() >= 3 && data.invitedEmail.size() <= 200 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 160 &&
+        data.role in ['ADMIN_LEMBAGA', 'KEPALA_RA', 'PENILAI_1', 'PENILAI_2'] &&
+        data.status in ['pending', 'claimed', 'revoked'] &&
+        data.invitedBy is string && data.invitedBy.size() >= 1 && data.invitedBy.size() <= 128 &&
+        (!('claimedByUid' in data) || (data.claimedByUid is string && data.claimedByUid.size() <= 128)) &&
+        (!('claimedAt' in data) || data.claimedAt is timestamp) &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMasterAssessor(data, aId) {
+      return data.keys().hasAll(['assessorId', 'nama', 'status', 'updatedAt']) &&
+        data.keys().hasOnly(['assessorId', 'nama', 'nip', 'pangkatGol', 'jabatan', 'unitKerja', 'noSk', 'tanggalSk', 'berlakuSampai', 'status', 'createdAt', 'updatedAt']) &&
+        data.assessorId is string && data.assessorId == aId && isValidId(data.assessorId) &&
+        data.nama is string && data.nama.size() >= 2 && data.nama.size() <= 160 &&
+        (!('nip' in data) || (data.nip is string && data.nip.size() <= 40)) &&
+        (!('pangkatGol' in data) || (data.pangkatGol is string && data.pangkatGol.size() <= 100)) &&
+        (!('jabatan' in data) || (data.jabatan is string && data.jabatan.size() <= 160)) &&
+        (!('unitKerja' in data) || (data.unitKerja is string && data.unitKerja.size() <= 200)) &&
+        (!('noSk' in data) || (data.noSk is string && data.noSk.size() <= 120)) &&
+        (!('tanggalSk' in data) || (data.tanggalSk is string && data.tanggalSk.size() <= 60)) &&
+        (!('berlakuSampai' in data) || (data.berlakuSampai is string && data.berlakuSampai.size() <= 60)) &&
+        data.status in ['active', 'inactive'] &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMasterInstrument(data, verId) {
+      return data.keys().hasAll(['versionId', 'versionNumber', 'title', 'isActive', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['versionId', 'versionNumber', 'title', 'sourceFile', 'changelog', 'isActive', 'settingSheetVerified', 'anomalies', 'settingSummary', 'indicators', 'createdAt', 'updatedAt']) &&
+        data.versionId is string && data.versionId == verId && isValidId(data.versionId) &&
+        data.versionNumber is string && data.versionNumber.size() >= 1 && data.versionNumber.size() <= 32 &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 200 &&
+        (!('sourceFile' in data) || (data.sourceFile is string && data.sourceFile.size() <= 200)) &&
+        (!('changelog' in data) || (data.changelog is string && data.changelog.size() <= 2000)) &&
+        data.isActive is bool &&
+        (!('settingSheetVerified' in data) || data.settingSheetVerified is bool) &&
+        (!('anomalies' in data) || (data.anomalies is list && data.anomalies.size() <= 200)) &&
+        (!('settingSummary' in data) || data.settingSummary is map) &&
+        (!('indicators' in data) || (data.indicators is list && data.indicators.size() >= 1 && data.indicators.size() <= 200 && data.indicators[0] is map)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPeriod(data, pId) {
+      return data.keys().hasAll(['periodId', 'institutionId', 'yearLabel', 'instrumentVersionId', 'status', 'p1Finalized', 'p2Finalized', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['periodId', 'institutionId', 'yearLabel', 'startDate', 'endDate', 'instrumentVersionId', 'status', 'p1Finalized', 'p2Finalized', 'formulaVerified', 'lastActiveIndicatorId', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.periodId is string && data.periodId == pId && isValidId(data.periodId) &&
+        isValidId(data.institutionId) &&
+        data.yearLabel is string && data.yearLabel.size() >= 4 && data.yearLabel.size() <= 60 &&
+        (!('startDate' in data) || (data.startDate is string && data.startDate.size() <= 40)) &&
+        (!('endDate' in data) || (data.endDate is string && data.endDate.size() <= 40)) &&
+        data.instrumentVersionId is string && data.instrumentVersionId.size() <= 64 &&
+        data.status in ['draft', 'in_progress', 'finalized', 'archived'] &&
+        data.p1Finalized is bool &&
+        data.p2Finalized is bool &&
+        (!('formulaVerified' in data) || data.formulaVerified is bool) &&
+        (!('lastActiveIndicatorId' in data) || (data.lastActiveIndicatorId is string && data.lastActiveIndicatorId.size() <= 64)) &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidIndicatorResponse(data) {
+      return data.keys().hasAll(['institutionId', 'periodId', 'indicatorId', 'completionStatus', 'updatedBy', 'authorizedUids', 'updatedAt']) &&
+        data.keys().hasOnly(['responseId', 'institutionId', 'periodId', 'indicatorId', 'komponenCode', 'kepalaNote', 'completionStatus', 'checkedEvidences', 'updatedBy', 'authorizedUids', 'updatedAt']) &&
+        isValidId(data.institutionId) &&
+        isValidId(data.periodId) &&
+        data.indicatorId is string && data.indicatorId.size() >= 1 && data.indicatorId.size() <= 64 &&
+        (!('responseId' in data) || (data.responseId is string && data.responseId.size() <= 200)) &&
+        (!('komponenCode' in data) || (data.komponenCode is string && data.komponenCode.size() <= 16)) &&
+        (!('kepalaNote' in data) || (data.kepalaNote is string && data.kepalaNote.size() <= 4000)) &&
+        data.completionStatus in ['empty', 'draft', 'complete'] &&
+        (!('checkedEvidences' in data) || (data.checkedEvidences is list && data.checkedEvidences.size() <= 30)) &&
+        data.updatedBy is string && data.updatedBy.size() <= 128 &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAssessmentScore(data) {
+      return data.keys().hasAll(['institutionId', 'periodId', 'indicatorId', 'assessorId', 'assessorRole', 'score', 'status', 'authorizedUids', 'updatedAt']) &&
+        data.keys().hasOnly(['institutionId', 'periodId', 'indicatorId', 'assessorId', 'assessorRole', 'score', 'note', 'checkedEvidenceIds', 'status', 'authorizedUids', 'updatedAt']) &&
+        isValidId(data.institutionId) &&
+        isValidId(data.periodId) &&
+        data.indicatorId is string && data.indicatorId.size() >= 1 && data.indicatorId.size() <= 64 &&
+        data.assessorId is string && data.assessorId.size() >= 1 && data.assessorId.size() <= 128 &&
+        data.assessorRole in ['PENILAI_1', 'PENILAI_2'] &&
+        data.score is number && data.score >= 1 && data.score <= 4 &&
+        (!('note' in data) || (data.note is string && data.note.size() <= 2000)) &&
+        (!('checkedEvidenceIds' in data) || (data.checkedEvidenceIds is list && data.checkedEvidenceIds.size() <= 50)) &&
+        data.status in ['draft', 'finalized'] &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAssessmentNote(data) {
+      return data.keys().hasAll(['institutionId', 'periodId', 'assessorId', 'assessorRole', 'recommendation', 'finalized', 'authorizedUids', 'updatedAt']) &&
+        data.keys().hasOnly(['institutionId', 'periodId', 'assessorId', 'assessorRole', 'recommendation', 'finalized', 'authorizedUids', 'updatedAt']) &&
+        isValidId(data.institutionId) &&
+        isValidId(data.periodId) &&
+        data.assessorId is string && data.assessorId.size() >= 1 && data.assessorId.size() <= 128 &&
+        data.assessorRole in ['PENILAI_1', 'PENILAI_2'] &&
+        data.recommendation is string && data.recommendation.size() <= 4000 &&
+        data.finalized is bool &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidRecommendationItem(data, rId) {
+      return data.keys().hasAll(['recId', 'institutionId', 'periodId', 'sourceRole', 'komponenNama', 'temuan', 'rekomendasi', 'status', 'authorizedUids', 'updatedAt']) &&
+        data.keys().hasOnly(['recId', 'institutionId', 'periodId', 'sourceRole', 'komponenNama', 'temuan', 'rekomendasi', 'rencanaTindakLanjut', 'penanggungJawab', 'targetWaktu', 'status', 'authorizedUids', 'updatedAt']) &&
+        data.recId is string && data.recId == rId && isValidId(data.recId) &&
+        isValidId(data.institutionId) &&
+        isValidId(data.periodId) &&
+        data.sourceRole in ['PENILAI_1', 'PENILAI_2', 'GABUNGAN'] &&
+        data.komponenNama is string && data.komponenNama.size() >= 1 && data.komponenNama.size() <= 200 &&
+        data.temuan is string && data.temuan.size() <= 2000 &&
+        data.rekomendasi is string && data.rekomendasi.size() <= 2000 &&
+        (!('rencanaTindakLanjut' in data) || (data.rencanaTindakLanjut is string && data.rencanaTindakLanjut.size() <= 2000)) &&
+        (!('penanggungJawab' in data) || (data.penanggungJawab is string && data.penanggungJawab.size() <= 160)) &&
+        (!('targetWaktu' in data) || (data.targetWaktu is string && data.targetWaktu.size() <= 80)) &&
+        data.status in ['DRAFT', 'APPROVED'] &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidScoreHistory(data, hId) {
+      return data.keys().hasAll(['historyId', 'institutionId', 'periodId', 'indicatorId', 'assessorRole', 'actorUid', 'reason', 'actionType', 'authorizedUids', 'createdAt']) &&
+        data.keys().hasOnly(['historyId', 'institutionId', 'periodId', 'indicatorId', 'assessorRole', 'actorUid', 'actorName', 'oldScore', 'newScore', 'reason', 'actionType', 'authorizedUids', 'createdAt']) &&
+        data.historyId is string && data.historyId == hId && isValidId(data.historyId) &&
+        isValidId(data.institutionId) &&
+        isValidId(data.periodId) &&
+        data.indicatorId is string && data.indicatorId.size() >= 1 && data.indicatorId.size() <= 64 &&
+        data.assessorRole in ['PENILAI_1', 'PENILAI_2'] &&
+        data.actorUid is string && data.actorUid == request.auth.uid && data.actorUid.size() <= 128 &&
+        (!('actorName' in data) || (data.actorName is string && data.actorName.size() <= 160)) &&
+        (!('oldScore' in data) || data.oldScore == null || (data.oldScore is number && data.oldScore >= 1 && data.oldScore <= 4)) &&
+        (!('newScore' in data) || data.newScore == null || (data.newScore is number && data.newScore >= 1 && data.newScore <= 4)) &&
+        data.reason is string && data.reason.size() >= 1 && data.reason.size() <= 1000 &&
+        data.actionType in ['SCORE_CHANGE', 'LOCK', 'UNLOCK'] &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidDocumentTemplate(data, tplId) {
+      return data.keys().hasAll(['templateId', 'category', 'title', 'updatedAt']) &&
+        data.keys().hasOnly(['templateId', 'category', 'title', 'description', 'updatedAt']) &&
+        data.templateId is string && data.templateId == tplId && isValidId(data.templateId) &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 80 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidGeneratedDoc(data, dId) {
+      return data.keys().hasAll(['docId', 'institutionId', 'periodId', 'category', 'title', 'bodyContent', 'status', 'createdBy', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['docId', 'institutionId', 'periodId', 'templateId', 'category', 'title', 'docNumber', 'bodyContent', 'status', 'createdBy', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.docId is string && data.docId == dId && isValidId(data.docId) &&
+        isValidId(data.institutionId) &&
+        isValidId(data.periodId) &&
+        (!('templateId' in data) || (data.templateId is string && data.templateId.size() <= 128)) &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 80 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 250 &&
+        (!('docNumber' in data) || (data.docNumber is string && data.docNumber.size() <= 120)) &&
+        data.bodyContent is string && data.bodyContent.size() <= 40000 &&
+        data.status in ['DRAFT', 'APPROVED'] &&
+        data.createdBy is string && data.createdBy.size() <= 128 &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidEvidenceFile(data, evId) {
+      return data.keys().hasAll(['evidenceId', 'institutionId', 'periodId', 'indicatorId', 'fileName', 'mimeType', 'sizeBytes', 'verificationStatus', 'uploadedBy', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['evidenceId', 'institutionId', 'periodId', 'indicatorId', 'linkedIndicatorIds', 'fileName', 'mimeType', 'sizeBytes', 'storagePath', 'downloadUrl', 'description', 'verificationStatus', 'verificationNote', 'revisionHistory', 'uploadedBy', 'authorizedUids', 'createdAt', 'updatedAt']) &&
+        data.evidenceId is string && data.evidenceId == evId && isValidId(data.evidenceId) &&
+        isValidId(data.institutionId) &&
+        isValidId(data.periodId) &&
+        data.indicatorId is string && data.indicatorId.size() >= 1 && data.indicatorId.size() <= 64 &&
+        (!('linkedIndicatorIds' in data) || (data.linkedIndicatorIds is list && data.linkedIndicatorIds.size() >= 1 && data.linkedIndicatorIds.size() <= 30 && data.linkedIndicatorIds[0] is string)) &&
+        data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 240 &&
+        data.mimeType is string && data.mimeType.size() >= 1 && data.mimeType.size() <= 120 &&
+        data.sizeBytes is number && data.sizeBytes >= 0 && data.sizeBytes <= 52428800 &&
+        (!('storagePath' in data) || (data.storagePath is string && data.storagePath.size() <= 500)) &&
+        (!('downloadUrl' in data) || (data.downloadUrl is string && data.downloadUrl.size() <= 2000)) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+        data.verificationStatus in ['not_uploaded', 'uploaded', 'pending', 'verified', 'needs_revision'] &&
+        (!('verificationNote' in data) || (data.verificationNote is string && data.verificationNote.size() <= 1000)) &&
+        (!('revisionHistory' in data) || (data.revisionHistory is list && data.revisionHistory.size() <= 25)) &&
+        data.uploadedBy is string && data.uploadedBy.size() <= 128 &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['institutionId', 'actorUid', 'actorRole', 'action', 'summary', 'authorizedUids', 'createdAt']) &&
+        data.keys().hasOnly(['logId', 'institutionId', 'periodId', 'actorUid', 'actorRole', 'action', 'summary', 'authorizedUids', 'createdAt']) &&
+        isValidId(data.institutionId) &&
+        (!('logId' in data) || (data.logId is string && data.logId.size() <= 128)) &&
+        (!('periodId' in data) || (data.periodId is string && data.periodId.size() <= 128)) &&
+        data.actorUid is string && data.actorUid == request.auth.uid && data.actorUid.size() <= 128 &&
+        data.actorRole is string && data.actorRole.size() <= 40 &&
+        data.action is string && data.action.size() >= 1 && data.action.size() <= 80 &&
+        data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 1000 &&
+        isAuthorizedUidsList(data.authorizedUids) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidSystemSetting(data) {
+      return data.keys().hasAll(['maxFileSizeMb', 'activeInstrumentVersion', 'updatedAt']) &&
+        data.keys().hasOnly(['settingId', 'maxFileSizeMb', 'activeInstrumentVersion', 'updatedAt']) &&
+        (!('settingId' in data) || (data.settingId is string && data.settingId.size() <= 64)) &&
+        data.maxFileSizeMb is number && data.maxFileSizeMb >= 1 && data.maxFileSizeMb <= 100 &&
+        data.activeInstrumentVersion is string && data.activeInstrumentVersion.size() >= 1 && data.activeInstrumentVersion.size() <= 64 &&
+        data.updatedAt is timestamp;
+    }
+
+    // =========================================================
+    // COLLECTION MATCH RULES
+    // =========================================================
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isSuperAdmin());
+      allow list: if isSuperAdminEmail();
+      allow write: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isSuperAdmin());
+      allow list: if isSuperAdminEmail() || (isVerifiedUser() && resource.data.uid == request.auth.uid);
+      allow create: if isValidId(userId) && isOwner(userId) &&
+        isValidUserPublic(incoming(), userId) &&
+        incoming().globalRole == 'USER' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isValidUserPublic(incoming(), userId) && (
+        isSuperAdmin() || (
+          isOwner(userId) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'activeInstitutionId', 'updatedAt']) &&
+          incoming().globalRole == existing().globalRole &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time
+        )
+      );
+      allow delete: if false;
+
+      match /private/{docId} {
+        allow get: if isValidId(userId) && isValidId(docId) && (isOwner(userId) || isSuperAdmin());
+        allow list: if false;
+        allow create, update: if isValidId(userId) && docId == 'info' && (isOwner(userId) || isSuperAdmin()) &&
+          isValidUserPrivate(incoming(), userId) &&
+          incoming().updatedAt == request.time;
+        allow delete: if false;
+      }
+    }
+
+    match /institutions/{institutionId} {
+      allow get: if isValidId(institutionId) && (isSuperAdmin() || hasActiveMembership(institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create: if isValidId(institutionId) && isVerifiedUser() &&
+        isValidInstitution(incoming(), institutionId) &&
+        incoming().ownerUid == request.auth.uid &&
+        request.auth.uid in incoming().authorizedUids &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(institutionId) && isValidInstitution(incoming(), institutionId) && (
+        isSuperAdmin() || (
+          incoming().ownerUid == existing().ownerUid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time && (
+            (isInstitutionEditor(institutionId) &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['name', 'nsm', 'npsn', 'profileData', 'updatedAt'])) ||
+            (isInstitutionAdmin(institutionId) &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['authorizedUids', 'updatedAt'])) ||
+            (hasActiveMembership(institutionId) &&
+              request.auth.uid in incoming().authorizedUids &&
+              incoming().authorizedUids.hasAll(existing().authorizedUids) &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['authorizedUids', 'updatedAt']))
+          )
+        )
+      );
+      allow delete: if isValidId(institutionId) && isSuperAdmin();
+    }
+
+    match /memberships/{membershipId} {
+      allow get: if isValidId(membershipId) && (
+        isSuperAdmin() ||
+        (isVerifiedUser() && (existing().uid == request.auth.uid || isInstitutionAdmin(existing().institutionId)))
+      );
+      allow list: if isVerifiedUser() && (
+        isSuperAdminEmail() ||
+        resource.data.uid == request.auth.uid ||
+        ('authorizedUids' in resource.data && request.auth.uid in resource.data.authorizedUids)
+      );
+      allow create: if isValidId(membershipId) && isVerifiedUser() &&
+        isValidMembership(incoming(), membershipId) &&
+        institutionExists(incoming().institutionId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() ||
+          (isInstitutionAdmin(incoming().institutionId) && incoming().role != 'SUPER_ADMIN') ||
+          (
+            get(/databases/$(database)/documents/institutions/$(incoming().institutionId)).data.ownerUid == request.auth.uid &&
+            incoming().uid == request.auth.uid &&
+            incoming().role == 'ADMIN_LEMBAGA'
+          ) ||
+          (
+            'inviteId' in incoming() &&
+            isValidId(incoming().inviteId) &&
+            exists(/databases/$(database)/documents/teamInvitations/$(incoming().inviteId)) &&
+            get(/databases/$(database)/documents/teamInvitations/$(incoming().inviteId)).data.invitedEmail == request.auth.token.email &&
+            get(/databases/$(database)/documents/teamInvitations/$(incoming().inviteId)).data.institutionId == incoming().institutionId &&
+            get(/databases/$(database)/documents/teamInvitations/$(incoming().inviteId)).data.role == incoming().role &&
+            get(/databases/$(database)/documents/teamInvitations/$(incoming().inviteId)).data.status in ['pending', 'claimed'] &&
+            incoming().uid == request.auth.uid &&
+            incoming().role != 'SUPER_ADMIN'
+          )
+        );
+      allow update: if isValidId(membershipId) && isValidMembership(incoming(), membershipId) &&
+        incoming().uid == existing().uid &&
+        incoming().institutionId == existing().institutionId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() ||
+          (isInstitutionAdmin(existing().institutionId) && incoming().role != 'SUPER_ADMIN' && existing().role != 'SUPER_ADMIN')
+        );
+      allow delete: if isValidId(membershipId) && isSuperAdmin();
+    }
+
+    match /teamInvitations/{inviteId} {
+      allow get: if isValidId(inviteId) && (
+        isSuperAdmin() ||
+        isInstitutionAdmin(existing().institutionId) ||
+        (isVerifiedUser() && request.auth.token.email == existing().invitedEmail)
+      );
+      allow list: if isVerifiedUser() && (
+        isSuperAdminEmail() ||
+        request.auth.token.email == resource.data.invitedEmail ||
+        request.auth.uid in resource.data.authorizedUids
+      );
+      allow create: if isValidId(inviteId) && isVerifiedUser() &&
+        isValidTeamInvitation(incoming(), inviteId) &&
+        institutionExists(incoming().institutionId) &&
+        incoming().invitedBy == request.auth.uid &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (isSuperAdmin() || isInstitutionAdmin(incoming().institutionId));
+      allow update: if isValidId(inviteId) && isVerifiedUser() &&
+        isValidTeamInvitation(incoming(), inviteId) &&
+        incoming().institutionId == existing().institutionId &&
+        incoming().invitedEmail == existing().invitedEmail &&
+        incoming().invitedBy == existing().invitedBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() ||
+          (
+            isInstitutionAdmin(existing().institutionId) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'displayName', 'role', 'authorizedUids', 'updatedAt'])
+          ) ||
+          (
+            existing().status == 'pending' &&
+            request.auth.token.email == existing().invitedEmail &&
+            incoming().status == 'claimed' &&
+            incoming().claimedByUid == request.auth.uid &&
+            incoming().claimedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'claimedByUid', 'claimedAt', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(inviteId) && (isSuperAdmin() || isInstitutionAdmin(existing().institutionId));
+    }
+
+    match /masterAssessors/{assessorId} {
+      allow get: if isValidId(assessorId) && isVerifiedUser();
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || resource.data.status == 'active');
+      allow create, update: if isValidId(assessorId) && isSuperAdmin() &&
+        isValidMasterAssessor(incoming(), assessorId) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isValidId(assessorId) && isSuperAdmin();
+    }
+
+    match /masterInstruments/{versionId} {
+      allow get: if isValidId(versionId) && isVerifiedUser();
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || resource.data.isActive in [true, false]);
+      allow create, update: if isValidId(versionId) && isSuperAdmin() &&
+        isValidMasterInstrument(incoming(), versionId) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isValidId(versionId) && isSuperAdmin();
+    }
+
+    match /assessmentPeriods/{periodId} {
+      allow get: if isValidId(periodId) && (isSuperAdmin() || hasActiveMembership(existing().institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create: if isValidId(periodId) && isValidPeriod(incoming(), periodId) &&
+        institutionExists(incoming().institutionId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (isSuperAdmin() || isInstitutionEditor(incoming().institutionId));
+      allow update: if isValidId(periodId) && isValidPeriod(incoming(), periodId) &&
+        incoming().institutionId == existing().institutionId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() || (
+            existing().status != 'archived' && (
+              (isInstitutionEditor(existing().institutionId) &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['yearLabel', 'startDate', 'endDate', 'status', 'lastActiveIndicatorId', 'formulaVerified', 'updatedAt'])) ||
+              (isInstitutionAdmin(existing().institutionId) &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['authorizedUids', 'updatedAt'])) ||
+              (hasActiveMembership(existing().institutionId) &&
+                request.auth.uid in incoming().authorizedUids &&
+                incoming().authorizedUids.hasAll(existing().authorizedUids) &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['authorizedUids', 'updatedAt'])) ||
+              (isPenilai1(existing().institutionId) &&
+                existing().p1Finalized == false &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['p1Finalized', 'updatedAt'])) ||
+              (isPenilai2(existing().institutionId) &&
+                existing().p2Finalized == false &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['p2Finalized', 'updatedAt']))
+            )
+          )
+        );
+      allow delete: if isValidId(periodId) && isSuperAdmin();
+    }
+
+    match /indicatorResponses/{responseId} {
+      allow get: if isValidId(responseId) && (isSuperAdmin() || hasActiveMembership(existing().institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create, update: if isValidId(responseId) && isValidIndicatorResponse(incoming()) &&
+        institutionExists(incoming().institutionId) &&
+        periodExists(incoming().periodId) &&
+        incoming().updatedBy == request.auth.uid &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() || (
+            isInstitutionEditor(incoming().institutionId) &&
+            getPeriod(incoming().periodId).status != 'archived'
+          )
+        );
+      allow delete: if isValidId(responseId) && isSuperAdmin();
+    }
+
+    match /assessmentScores/{scoreId} {
+      allow get: if isValidId(scoreId) && (isSuperAdmin() || hasActiveMembership(existing().institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create, update: if isValidId(scoreId) && isValidAssessmentScore(incoming()) &&
+        institutionExists(incoming().institutionId) &&
+        periodExists(incoming().periodId) &&
+        incoming().assessorId == request.auth.uid &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() || (
+            getPeriod(incoming().periodId).status != 'archived' && (
+              (incoming().assessorRole == 'PENILAI_1' && isPenilai1(incoming().institutionId) && getPeriod(incoming().periodId).p1Finalized == false) ||
+              (incoming().assessorRole == 'PENILAI_2' && isPenilai2(incoming().institutionId) && getPeriod(incoming().periodId).p2Finalized == false)
+            )
+          )
+        );
+      allow delete: if isValidId(scoreId) && isSuperAdmin();
+    }
+
+    match /assessmentNotes/{noteId} {
+      allow get: if isValidId(noteId) && (isSuperAdmin() || hasActiveMembership(existing().institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create, update: if isValidId(noteId) && isValidAssessmentNote(incoming()) &&
+        institutionExists(incoming().institutionId) &&
+        periodExists(incoming().periodId) &&
+        incoming().assessorId == request.auth.uid &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() || (
+            getPeriod(incoming().periodId).status != 'archived' && (
+              (incoming().assessorRole == 'PENILAI_1' && isPenilai1(incoming().institutionId) && getPeriod(incoming().periodId).p1Finalized == false) ||
+              (incoming().assessorRole == 'PENILAI_2' && isPenilai2(incoming().institutionId) && getPeriod(incoming().periodId).p2Finalized == false)
+            )
+          )
+        );
+      allow delete: if isValidId(noteId) && isSuperAdmin();
+    }
+
+    match /recommendations/{recId} {
+      allow get: if isValidId(recId) && (isSuperAdmin() || hasActiveMembership(existing().institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create, update: if isValidId(recId) && isValidRecommendationItem(incoming(), recId) &&
+        institutionExists(incoming().institutionId) &&
+        periodExists(incoming().periodId) &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() || (
+            getPeriod(incoming().periodId).status != 'archived' && (
+              isInstitutionEditor(incoming().institutionId) ||
+              isPenilai1(incoming().institutionId) ||
+              isPenilai2(incoming().institutionId)
+            )
+          )
+        );
+      allow delete: if isValidId(recId) && (isSuperAdmin() || isInstitutionAdmin(existing().institutionId));
+    }
+
+    match /scoreHistory/{historyId} {
+      allow get: if isValidId(historyId) && (isSuperAdmin() || hasActiveMembership(existing().institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create: if isValidId(historyId) && isValidScoreHistory(incoming(), historyId) &&
+        institutionExists(incoming().institutionId) &&
+        periodExists(incoming().periodId) &&
+        incoming().createdAt == request.time &&
+        (isSuperAdmin() || hasActiveMembership(incoming().institutionId));
+      allow update, delete: if false;
+    }
+
+    match /documentTemplates/{templateId} {
+      allow get: if isValidId(templateId) && isVerifiedUser();
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || resource.data.category is string);
+      allow create, update: if isValidId(templateId) && isSuperAdmin() &&
+        isValidDocumentTemplate(incoming(), templateId) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isValidId(templateId) && isSuperAdmin();
+    }
+
+    match /generatedDocuments/{docId} {
+      allow get: if isValidId(docId) && (isSuperAdmin() || hasActiveMembership(existing().institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create: if isValidId(docId) && isValidGeneratedDoc(incoming(), docId) &&
+        institutionExists(incoming().institutionId) &&
+        periodExists(incoming().periodId) &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (isSuperAdmin() || isInstitutionEditor(incoming().institutionId));
+      allow update: if isValidId(docId) && isValidGeneratedDoc(incoming(), docId) &&
+        incoming().institutionId == existing().institutionId &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() || (
+            isInstitutionEditor(existing().institutionId) &&
+            getPeriod(existing().periodId).status != 'archived' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['title', 'docNumber', 'bodyContent', 'status', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(docId) && (isSuperAdmin() || isInstitutionAdmin(existing().institutionId));
+    }
+
+    match /evidenceFiles/{evidenceId} {
+      allow get: if isValidId(evidenceId) && (isSuperAdmin() || hasActiveMembership(existing().institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create: if isValidId(evidenceId) && isValidEvidenceFile(incoming(), evidenceId) &&
+        institutionExists(incoming().institutionId) &&
+        periodExists(incoming().periodId) &&
+        incoming().uploadedBy == request.auth.uid &&
+        incoming().verificationStatus in ['uploaded', 'pending'] &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (isSuperAdmin() || isInstitutionEditor(incoming().institutionId));
+      allow update: if isValidId(evidenceId) && isValidEvidenceFile(incoming(), evidenceId) &&
+        incoming().institutionId == existing().institutionId &&
+        incoming().uploadedBy == existing().uploadedBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() || (
+            isInstitutionEditor(existing().institutionId) &&
+            incoming().verificationStatus in ['uploaded', 'pending'] &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['fileName', 'mimeType', 'sizeBytes', 'indicatorId', 'linkedIndicatorIds', 'description', 'revisionHistory', 'verificationStatus', 'updatedAt'])
+          ) || (
+            (isPenilai1(existing().institutionId) || isPenilai2(existing().institutionId)) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['verificationStatus', 'verificationNote', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(evidenceId) && (isSuperAdmin() || isInstitutionEditor(existing().institutionId));
+    }
+
+    match /auditLogs/{logId} {
+      allow get: if isValidId(logId) && (isSuperAdmin() || isInstitutionAdmin(existing().institutionId));
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || request.auth.uid in resource.data.authorizedUids);
+      allow create: if isValidId(logId) && isValidAuditLog(incoming()) &&
+        institutionExists(incoming().institutionId) &&
+        incoming().createdAt == request.time &&
+        (isSuperAdmin() || hasActiveMembership(incoming().institutionId));
+      allow update, delete: if false;
+    }
+
+    match /systemSettings/{settingId} {
+      allow get: if isValidId(settingId) && isVerifiedUser();
+      allow list: if isVerifiedUser() && (isSuperAdminEmail() || resource.data.activeInstrumentVersion is string);
+      allow create, update: if isValidId(settingId) && isSuperAdmin() &&
+        isValidSystemSetting(incoming()) &&
+        incoming().updatedAt == request.time;
+      allow delete: if isValidId(settingId) && isSuperAdmin();
+    }
+  }
+}

@@ -17,6 +17,11 @@
   margin: 12mm 15mm 15mm 20mm; /* Standar berkas dinas Kemenag: Kiri 20mm untuk jilid, Atas 12mm, Kanan 15mm, Bawah 15mm */
 }
 
+@page landscape {
+  size: A4 landscape;
+  margin: 10mm 12mm 12mm 15mm;
+}
+
 @media print {
   /* Hide all non-printable UI */
   .no-print, nav, header, footer {
@@ -60,6 +65,21 @@
     break-after: page !important;
   }
 
+  /* Landscape A4 sheet for Format 4 (96 indicators matrix) */
+  .a4-sheet-landscape {
+    page: landscape;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
   /* Specific precision rules for the COVER sheet so it NEVER spills onto page 2 */
   .cover-sheet {
     box-sizing: border-box !important;
@@ -74,6 +94,7 @@
   }
 
   .a4-sheet:last-child,
+  .a4-sheet-landscape:last-child,
   .cover-sheet:last-child {
     page-break-after: avoid !important;
     break-after: avoid !important;
@@ -97,6 +118,10 @@
     border-collapse: collapse !important;
   }
 
+  thead {
+    display: table-header-group !important;
+  }
+
   tr {
     page-break-inside: avoid !important;
     page-break-after: auto;
@@ -113,6 +138,67 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+
+  /* When printing single document from DocumentGenerator modal without window.open popup */
+  body.doc-modal-printing .app-main-shell {
+    display: none !important;
+  }
+  body.doc-modal-printing .doc-modal-print-overlay {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  body.doc-modal-printing .doc-modal-print-frame {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* When printing 10-slide Company Profile PPT in 16:9 landscape */
+  body.company-ppt-printing .ppt-hide-on-print {
+    display: none !important;
+  }
+  body.company-ppt-printing .ppt-print-deck {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body.company-ppt-printing main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  .ppt-print-slide {
+    page: company_ppt;
+    width: 281mm !important;
+    height: 158mm !important;
+    max-height: 158mm !important;
+    margin: 0 auto !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .ppt-print-slide:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+}
+
+@page company_ppt {
+  size: A4 landscape;
+  margin: 10mm 8mm;
 }
 
 /* Custom scrollbars */

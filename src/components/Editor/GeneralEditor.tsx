@@ -1,12 +1,12 @@
 import React, { useRef } from 'react';
 import { compressImageFile } from '../../utils/imageCompressor';
-import { InstitutionProfile, PrincipalProfile, EvaluatorProfile, SocialMediaInfo, AccreditationDetail } from '../../types/ppkm';
+import { InstitutionProfile, PrincipalProfile, EvaluatorProfile, AdminDocumentsInfo } from '../../types/ppkm';
+import { MasterAssessorRecord } from '../../types/saas';
 import { 
   Building2, 
   UserCheck, 
   Shield, 
   Upload, 
-  RefreshCw, 
   Share2, 
   ShieldCheck, 
   Award, 
@@ -15,8 +15,6 @@ import {
   Instagram, 
   Facebook, 
   Phone, 
-  Mail, 
-  Sparkles, 
   FileText,
   MessageSquare
 } from 'lucide-react';
@@ -25,18 +23,26 @@ interface GeneralEditorProps {
   institution: InstitutionProfile;
   principal: PrincipalProfile;
   evaluators: EvaluatorProfile;
+  adminDocs: AdminDocumentsInfo;
+  masterAssessors?: MasterAssessorRecord[];
+  sectionFilter?: 'ALL' | 'profil_lembaga' | 'data_kepala' | 'data_penilai';
   onUpdateInstitution: (updated: Partial<InstitutionProfile>) => void;
   onUpdatePrincipal: (updated: Partial<PrincipalProfile>) => void;
   onUpdateEvaluators: (updated: Partial<EvaluatorProfile>) => void;
+  onUpdateAdminDocs: (updated: Partial<AdminDocumentsInfo>) => void;
 }
 
 export const GeneralEditor: React.FC<GeneralEditorProps> = ({
   institution,
   principal,
   evaluators,
+  adminDocs,
+  masterAssessors = [],
+  sectionFilter = 'ALL',
   onUpdateInstitution,
   onUpdatePrincipal,
   onUpdateEvaluators,
+  onUpdateAdminDocs,
 }) => {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const kemenagLogoInputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +50,11 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
   const buildingPhotoInputRef = useRef<HTMLInputElement>(null);
   const closingPhotoInputRef = useRef<HTMLInputElement>(null);
   const accreditationCertInputRef = useRef<HTMLInputElement>(null);
+
+  const showProfileSections = sectionFilter === 'ALL' || sectionFilter === 'profil_lembaga';
+  const showKepalaSection = sectionFilter === 'ALL' || sectionFilter === 'data_kepala';
+  const showPenilaiSection = sectionFilter === 'ALL' || sectionFilter === 'data_penilai';
+  const showPhotosSection = sectionFilter === 'ALL' || sectionFilter === 'profil_lembaga' || sectionFilter === 'data_kepala';
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -61,9 +72,10 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto py-6 px-4">
+    <div className="space-y-8 max-w-5xl mx-auto py-2 px-1 sm:px-4">
       
       {/* SECTION 1: FOTO & LOGO DOKUMEN RESMI */}
+      {showPhotosSection && (
       <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
         <div className="border-b border-slate-100 pb-4 mb-6">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -234,8 +246,10 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
 
         </div>
       </section>
+      )}
 
       {/* SECTION 2: IDENTITAS KEPALA MADRASAH */}
+      {showKepalaSection && (
       <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
         <div className="border-b border-slate-100 pb-4 mb-6">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -358,10 +372,79 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
               <option value="Laki-laki">Laki-laki</option>
             </select>
           </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">No. Seri Karpeg</label>
+            <input
+              type="text"
+              value={principal.noSeriKarpeg || ''}
+              onChange={(e) => onUpdatePrincipal({ noSeriKarpeg: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              placeholder="- (atau nomor seri Karpeg PNS)"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">NRG (Nomor Registrasi Guru)</label>
+            <input
+              type="text"
+              value={principal.nrg || ''}
+              onChange={(e) => onUpdatePrincipal({ nrg: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              placeholder="Nomor Registrasi Guru"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Program Keahlian / Jurusan Ijazah</label>
+            <input
+              type="text"
+              value={principal.programKeahlian || ''}
+              onChange={(e) => onUpdatePrincipal({ programKeahlian: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              placeholder="Contoh: Pendidikan Islam Anak Usia Dini (PIAUD)"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Unit Kerja / Tempat Tugas</label>
+            <input
+              type="text"
+              value={principal.unitKerja || ''}
+              onChange={(e) => onUpdatePrincipal({ unitKerja: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              placeholder={institution.namaLembaga}
+            />
+          </div>
+
+          <div className="md:col-span-2 grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Masa Kerja Jabatan (Tahun)</label>
+              <input
+                type="text"
+                value={principal.masaKerjaTahun || ''}
+                onChange={(e) => onUpdatePrincipal({ masaKerjaTahun: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                placeholder="Contoh: 5"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Masa Kerja Tambahan (Bulan)</label>
+              <input
+                type="text"
+                value={principal.masaKerjaBulan || ''}
+                onChange={(e) => onUpdatePrincipal({ masaKerjaBulan: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                placeholder="Contoh: 4"
+              />
+            </div>
+          </div>
         </div>
       </section>
+      )}
 
       {/* SECTION 3: PROFIL MADRASAH / LEMBAGA */}
+      {showProfileSections && (
       <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
         <div className="border-b border-slate-100 pb-4 mb-6">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -404,18 +487,21 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
               value={institution.nsm}
               onChange={(e) => onUpdateInstitution({ nsm: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-              placeholder="111132090005"
+              placeholder="101232090066"
             />
+            {institution.nsm && !/^\d{10,12}$/.test(institution.nsm.trim()) && (
+              <span className="text-[11px] text-amber-700 block mt-0.5">Catatan: NSM standar Kemenag terdiri dari 12 digit angka.</span>
+            )}
           </div>
 
           <div>
-            <label className="block font-medium text-slate-700 mb-1">NPSM</label>
+            <label className="block font-medium text-slate-700 mb-1">NPSN</label>
             <input
               type="text"
-              value={institution.npsm}
-              onChange={(e) => onUpdateInstitution({ npsm: e.target.value })}
+              value={institution.npsn || institution.npsm}
+              onChange={(e) => onUpdateInstitution({ npsn: e.target.value, npsm: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-              placeholder="60708649"
+              placeholder="69986381"
             />
           </div>
 
@@ -534,67 +620,257 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
               value={institution.email}
               onChange={(e) => onUpdateInstitution({ email: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden font-mono"
-              placeholder="min_klangenan@yahoo.com"
+              placeholder="ra@madrasah.sch.id"
             />
+            {institution.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(institution.email.trim()) && (
+              <span className="text-[11px] text-amber-700 block mt-0.5">Format email belum valid.</span>
+            )}
+          </div>
+
+          <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Kode Pos</label>
+              <input
+                type="text"
+                value={institution.kodePos || ''}
+                onChange={(e) => onUpdateInstitution({ kodePos: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
+                placeholder="45162"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Tahun Berdiri RA</label>
+              <input
+                type="text"
+                value={institution.tahunBerdiri || ''}
+                onChange={(e) => onUpdateInstitution({ tahunBerdiri: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
+                placeholder="Contoh: 2016"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Telp / Fax Kantor</label>
+              <input
+                type="text"
+                value={institution.telpFax || ''}
+                onChange={(e) => onUpdateInstitution({ telpFax: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
+                placeholder="-"
+              />
+            </div>
           </div>
         </div>
       </section>
+      )}
 
       {/* SECTION 4: TIM PENILAI & PENGESAHAN */}
+      {showPenilaiSection && (
       <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
         <div className="border-b border-slate-100 pb-4 mb-6">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Shield className="w-5 h-5 text-emerald-700" />
-            <span>Tim Penilai (Pengawas Pembina) & Lembar Pengesahan</span>
+            <span>Tim Penilai (Penilai 1 &amp; Penilai 2), SK Penugasan &amp; Pengesahan</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Data penilai PKKM dan pejabat Kementerian Agama yang menandatangani berkas.
+            Data penilai PKKM dan pejabat Kementerian Agama yang terhubung ke Sheet Data Penilai 1 &amp; 2.
           </p>
         </div>
 
+        {/* Master Penilai Quick-Picker */}
+        {masterAssessors.length > 0 && (
+          <div className="mb-5 p-3.5 bg-emerald-50/50 border border-emerald-200 rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label className="block font-semibold text-emerald-900 mb-1">Pilih Cepat Penilai 1 dari Master Pengawas</label>
+              <select
+                value=""
+                onChange={(e) => {
+                  const found = masterAssessors.find((a) => a.assessorId === e.target.value);
+                  if (!found) return;
+                  onUpdateEvaluators({
+                    pengawas1Nama: found.nama,
+                    pengawas1Nip: found.nip,
+                    pengawas1PangkatGol: found.pangkatGol,
+                    pengawas1Jabatan: found.jabatan,
+                    pengawas1UnitKerja: found.unitKerja,
+                  });
+                }}
+                className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-md"
+              >
+                <option value="">-- Pilih dari Master Penilai ({masterAssessors.length}) --</option>
+                {masterAssessors.map((a) => (
+                  <option key={a.assessorId} value={a.assessorId}>
+                    {a.nama} (NIP. {a.nip})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold text-emerald-900 mb-1">Pilih Cepat Penilai 2 dari Master Pengawas</label>
+              <select
+                value=""
+                onChange={(e) => {
+                  const found = masterAssessors.find((a) => a.assessorId === e.target.value);
+                  if (!found) return;
+                  onUpdateEvaluators({
+                    pengawas2Nama: found.nama,
+                    pengawas2Nip: found.nip,
+                    pengawas2PangkatGol: found.pangkatGol,
+                    pengawas2Jabatan: found.jabatan,
+                    pengawas2UnitKerja: found.unitKerja,
+                  });
+                }}
+                className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-md"
+              >
+                <option value="">-- Pilih dari Master Penilai ({masterAssessors.length}) --</option>
+                {masterAssessors.map((a) => (
+                  <option key={a.assessorId} value={a.assessorId}>
+                    {a.nama} (NIP. {a.nip})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <div>
-            <label className="block font-medium text-slate-700 mb-1">Nama Pengawas Pembina 1 (Penilai Utama)</label>
+            <label className="block font-medium text-slate-700 mb-1">Nama Penilai 1 (Pengawas Pembina)</label>
             <input
               type="text"
               value={evaluators.pengawas1Nama}
               onChange={(e) => onUpdateEvaluators({ pengawas1Nama: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
-              placeholder="Drs. H. Deni Octaviana, M.Pd.I"
+              placeholder="Nama lengkap Penilai 1"
             />
           </div>
 
           <div>
-            <label className="block font-medium text-slate-700 mb-1">NIP Pengawas 1</label>
+            <label className="block font-medium text-slate-700 mb-1">NIP Penilai 1</label>
             <input
               type="text"
               value={evaluators.pengawas1Nip}
               onChange={(e) => onUpdateEvaluators({ pengawas1Nip: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
-              placeholder="197008121995031002"
+              placeholder="NIP Penilai 1"
             />
           </div>
 
           <div>
-            <label className="block font-medium text-slate-700 mb-1">Nama Pengawas Madrasah 2</label>
+            <label className="block font-medium text-slate-700 mb-1">Pangkat / Golongan Penilai 1</label>
+            <input
+              type="text"
+              value={evaluators.pengawas1PangkatGol || ''}
+              onChange={(e) => onUpdateEvaluators({ pengawas1PangkatGol: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+              placeholder="Contoh: Pembina Tk.I / IVb"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Jabatan &amp; Unit Kerja Penilai 1</label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={evaluators.pengawas1Jabatan}
+                onChange={(e) => onUpdateEvaluators({ pengawas1Jabatan: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Jabatan Penilai 1"
+              />
+              <input
+                type="text"
+                value={evaluators.pengawas1UnitKerja || ''}
+                onChange={(e) => onUpdateEvaluators({ pengawas1UnitKerja: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Unit Kerja / Instansi"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Nama Penilai 2 (Pengawas Madrasah)</label>
             <input
               type="text"
               value={evaluators.pengawas2Nama}
               onChange={(e) => onUpdateEvaluators({ pengawas2Nama: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
-              placeholder="H. Maksum, S.Ag, M.Pd"
+              placeholder="Nama lengkap Penilai 2"
             />
           </div>
 
           <div>
-            <label className="block font-medium text-slate-700 mb-1">NIP Pengawas 2</label>
+            <label className="block font-medium text-slate-700 mb-1">NIP Penilai 2</label>
             <input
               type="text"
               value={evaluators.pengawas2Nip}
               onChange={(e) => onUpdateEvaluators({ pengawas2Nip: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
-              placeholder="197204151998031003"
+              placeholder="NIP Penilai 2"
             />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Pangkat / Golongan Penilai 2</label>
+            <input
+              type="text"
+              value={evaluators.pengawas2PangkatGol || ''}
+              onChange={(e) => onUpdateEvaluators({ pengawas2PangkatGol: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+              placeholder="Contoh: Pembina / IVa"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Jabatan &amp; Unit Kerja Penilai 2</label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={evaluators.pengawas2Jabatan || ''}
+                onChange={(e) => onUpdateEvaluators({ pengawas2Jabatan: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Jabatan Penilai 2"
+              />
+              <input
+                type="text"
+                value={evaluators.pengawas2UnitKerja || ''}
+                onChange={(e) => onUpdateEvaluators({ pengawas2UnitKerja: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Unit Kerja / Instansi"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">No. SK Penugasan Tim Penilai</label>
+            <input
+              type="text"
+              value={evaluators.skPenugasanNomor || ''}
+              onChange={(e) => onUpdateEvaluators({ skPenugasanNomor: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
+              placeholder="Nomor SK Penugasan Tim Penilai"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Tanggal SK Penugasan</label>
+              <input
+                type="text"
+                value={evaluators.skPenugasanTanggal || ''}
+                onChange={(e) => onUpdateEvaluators({ skPenugasanTanggal: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Tanggal SK"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-slate-700 mb-1">Berlaku Sampai</label>
+              <input
+                type="text"
+                value={evaluators.skPenugasanBerlakuSampai || ''}
+                onChange={(e) => onUpdateEvaluators({ skPenugasanBerlakuSampai: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Tanggal Berlaku"
+              />
+            </div>
           </div>
 
           <div>
@@ -604,7 +880,7 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
               value={evaluators.komiteNama}
               onChange={(e) => onUpdateEvaluators({ komiteNama: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
-              placeholder="Drs. H. Kosim"
+              placeholder="Nama Ketua Komite"
             />
           </div>
 
@@ -615,7 +891,7 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
               value={evaluators.kasiPenmadNama}
               onChange={(e) => onUpdateEvaluators({ kasiPenmadNama: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
-              placeholder="Dr. H. Aghits Nihayah, M.Ag"
+              placeholder="Nama Kasi Penmad Kemenag"
             />
           </div>
 
@@ -626,7 +902,7 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
               value={evaluators.tanggalPenilaian}
               onChange={(e) => onUpdateEvaluators({ tanggalPenilaian: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
-              placeholder="20 Oktober 2026"
+              placeholder="Tanggal penilaian"
             />
           </div>
 
@@ -637,13 +913,16 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
               value={evaluators.tempatPenilaian}
               onChange={(e) => onUpdateEvaluators({ tempatPenilaian: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
-              placeholder="Klangenan, Cirebon"
+              placeholder="Kota / Kecamatan"
             />
           </div>
         </div>
       </section>
+      )}
 
       {/* SECTION 5: MEDIA SOSIAL & INFORMASI PUBLIK (USER REQUEST PPT / COMPANY PROFILE) */}
+      {showProfileSections && (
+      <>
       <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
         <div className="border-b border-slate-100 pb-4 mb-6">
           <div className="flex items-center justify-between">
@@ -1052,6 +1331,182 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
           </div>
         </div>
       </section>
+      </>
+      )}
+
+      {/* SECTION 8: NASKAH DINAS & KELENGKAPAN SURAT RESMI */}
+      {showProfileSections && (
+      <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+        <div className="border-b border-slate-100 pb-4 mb-6">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-emerald-700" />
+            <span>Naskah Dinas &amp; Kelengkapan Surat Resmi (Siap Cetak A4)</span>
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Lengkapi nomor surat, tanggal penetapan, dan detail Berita Acara agar Lembar Pengesahan, Surat Pernyataan, Surat Tugas, dan SK Pembagian Tugas tercetak otomatis.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Nama Yayasan / Badan Penyelenggara</label>
+            <input
+              type="text"
+              value={adminDocs.namaYayasan}
+              onChange={(e) => onUpdateAdminDocs({ namaYayasan: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden font-semibold"
+              placeholder="Nama Yayasan Penyelenggara"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Nomor SK Izin Operasional (IJOP)</label>
+            <input
+              type="text"
+              value={adminDocs.izinOperasionalNomor}
+              onChange={(e) => onUpdateAdminDocs({ izinOperasionalNomor: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
+              placeholder="Nomor SK IJOP Kemenag"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Nomor Surat Pernyataan Keabsahan</label>
+            <input
+              type="text"
+              value={adminDocs.suratPernyataanNomor}
+              onChange={(e) => onUpdateAdminDocs({ suratPernyataanNomor: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
+              placeholder="Nomor Surat Pernyataan"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Tanggal Surat Pernyataan</label>
+            <input
+              type="text"
+              value={adminDocs.suratPernyataanTanggal}
+              onChange={(e) => onUpdateAdminDocs({ suratPernyataanTanggal: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+              placeholder="Tanggal Surat Pernyataan"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Nomor Surat Tugas Tim Penilai / Pelaksana</label>
+            <input
+              type="text"
+              value={adminDocs.suratTugasNomor}
+              onChange={(e) => onUpdateAdminDocs({ suratTugasNomor: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
+              placeholder="Nomor Surat Tugas"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Tanggal &amp; Pejabat Pemberi Surat Tugas</label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={adminDocs.suratTugasTanggal}
+                onChange={(e) => onUpdateAdminDocs({ suratTugasTanggal: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Tanggal Surat Tugas"
+              />
+              <input
+                type="text"
+                value={adminDocs.suratTugasPemberi}
+                onChange={(e) => onUpdateAdminDocs({ suratTugasPemberi: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Pejabat Pemberi Tugas"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Nomor SK Pembagian Tugas Tim PKKRA</label>
+            <input
+              type="text"
+              value={adminDocs.skPanitiaNomor}
+              onChange={(e) => onUpdateAdminDocs({ skPanitiaNomor: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
+              placeholder="Nomor SK Pembagian Tugas"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Tanggal Penetapan SK Pembagian Tugas</label>
+            <input
+              type="text"
+              value={adminDocs.skPanitiaTanggal}
+              onChange={(e) => onUpdateAdminDocs({ skPanitiaTanggal: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+              placeholder="Tanggal SK"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Nomor Berita Acara Pelaksanaan</label>
+            <input
+              type="text"
+              value={adminDocs.beritaAcaraNomor}
+              onChange={(e) => onUpdateAdminDocs({ beritaAcaraNomor: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md font-mono focus:outline-hidden"
+              placeholder="Nomor Berita Acara"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700 mb-1">Hari, Tanggal &amp; Waktu Berita Acara</label>
+            <div className="grid grid-cols-3 gap-2">
+              <input
+                type="text"
+                value={adminDocs.beritaAcaraHari}
+                onChange={(e) => onUpdateAdminDocs({ beritaAcaraHari: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Hari"
+              />
+              <input
+                type="text"
+                value={adminDocs.beritaAcaraTanggal}
+                onChange={(e) => onUpdateAdminDocs({ beritaAcaraTanggal: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Tanggal"
+              />
+              <input
+                type="text"
+                value={adminDocs.beritaAcaraWaktu}
+                onChange={(e) => onUpdateAdminDocs({ beritaAcaraWaktu: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+                placeholder="Waktu"
+              />
+            </div>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block font-medium text-slate-700 mb-1">Tempat Pelaksanaan Visitasi / Berita Acara</label>
+            <input
+              type="text"
+              value={adminDocs.beritaAcaraTempat}
+              onChange={(e) => onUpdateAdminDocs({ beritaAcaraTempat: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden"
+              placeholder="Lokasi Visitasi PKKM"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block font-medium text-slate-700 mb-1">Catatan Hasil Pelaksanaan pada Berita Acara</label>
+            <textarea
+              rows={2}
+              value={adminDocs.beritaAcaraCatatan}
+              onChange={(e) => onUpdateAdminDocs({ beritaAcaraCatatan: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-hidden leading-relaxed"
+              placeholder="Catatan hasil pelaksanaan visitasi & pemeriksaan bukti fisik..."
+            />
+          </div>
+        </div>
+      </section>
+      )}
 
     </div>
   );

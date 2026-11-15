@@ -1,0 +1,400 @@
+{
+  "entities": {
+    "UserPublic": {
+      "title": "User Public Profile",
+      "description": "Non-PII workspace membership metadata for an authenticated user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "activeInstitutionId": { "type": "string", "maxLength": 128 },
+        "globalRole": { "type": "string", "enum": ["SUPER_ADMIN", "USER"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "globalRole", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "User Private PII",
+      "description": "Isolated PII document storing email, phone, and avatar URL strictly accessible to owner or Super Admin.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "photoUrl": { "type": "string", "maxLength": 1000 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "updatedAt"]
+    },
+    "Institution": {
+      "title": "Institution (RA Tenant)",
+      "description": "Isolated tenant record for a Raudhatul Athfal institution.",
+      "type": "object",
+      "properties": {
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 200 },
+        "nsm": { "type": "string", "maxLength": 32 },
+        "npsn": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "expiresAt": { "type": "string", "maxLength": 40 },
+        "ownerUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "profileData": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["institutionId", "name", "status", "ownerUid", "createdAt", "updatedAt"]
+    },
+    "Membership": {
+      "title": "Tenant Membership & Role",
+      "description": "Authoritative RBAC link between user UID and an RA institution.",
+      "type": "object",
+      "properties": {
+        "membershipId": { "type": "string", "minLength": 3, "maxLength": 260 },
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "userEmail": { "type": "string", "maxLength": 200 },
+        "role": { "type": "string", "enum": ["SUPER_ADMIN", "ADMIN_LEMBAGA", "KEPALA_RA", "PENILAI_1", "PENILAI_2"] },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "inviteId": { "type": "string", "maxLength": 128 },
+        "authorizedUids": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["membershipId", "uid", "institutionId", "displayName", "role", "status", "createdAt", "updatedAt"]
+    },
+    "TeamInvitation": {
+      "title": "Email-Based Team & Assessor Invitation",
+      "description": "Pending or claimed role invitation bound to a verified Google email for an RA institution.",
+      "type": "object",
+      "properties": {
+        "inviteId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionName": { "type": "string", "maxLength": 200 },
+        "invitedEmail": { "type": "string", "format": "email", "maxLength": 200 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "role": { "type": "string", "enum": ["ADMIN_LEMBAGA", "KEPALA_RA", "PENILAI_1", "PENILAI_2"] },
+        "status": { "type": "string", "enum": ["pending", "claimed", "revoked"] },
+        "invitedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "claimedByUid": { "type": "string", "maxLength": 128 },
+        "claimedAt": { "type": "string", "format": "date-time" },
+        "authorizedUids": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["inviteId", "institutionId", "invitedEmail", "displayName", "role", "status", "invitedBy", "authorizedUids", "createdAt", "updatedAt"]
+    },
+    "MasterAssessor": {
+      "title": "Cross-Institution Master Assessor Directory",
+      "description": "Kemenag assessor directory managed by Super Admin for consistent Penilai 1 & 2 assignment.",
+      "type": "object",
+      "properties": {
+        "assessorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "nama": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "nip": { "type": "string", "maxLength": 40 },
+        "pangkatGol": { "type": "string", "maxLength": 100 },
+        "jabatan": { "type": "string", "maxLength": 160 },
+        "unitKerja": { "type": "string", "maxLength": 200 },
+        "noSk": { "type": "string", "maxLength": 120 },
+        "tanggalSk": { "type": "string", "maxLength": 60 },
+        "berlakuSampai": { "type": "string", "maxLength": 60 },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["assessorId", "nama", "status", "updatedAt"]
+    },
+    "MasterInstrument": {
+      "title": "Master Instrument Version",
+      "description": "Versioned PKKM_v.26 untuk RA master instrument schema and change history.",
+      "type": "object",
+      "properties": {
+        "versionId": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "versionNumber": { "type": "string", "maxLength": 32 },
+        "title": { "type": "string", "maxLength": 200 },
+        "sourceFile": { "type": "string", "maxLength": 200 },
+        "changelog": { "type": "string", "maxLength": 2000 },
+        "isActive": { "type": "boolean" },
+        "settingSheetVerified": { "type": "boolean" },
+        "anomalies": { "type": "array" },
+        "settingSummary": { "type": "object" },
+        "indicators": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["versionId", "versionNumber", "title", "isActive", "createdAt", "updatedAt"]
+    },
+    "AssessmentPeriod": {
+      "title": "PKKM Assessment Period",
+      "description": "Annual assessment cycle for an RA institution.",
+      "type": "object",
+      "properties": {
+        "periodId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "yearLabel": { "type": "string", "minLength": 4, "maxLength": 60 },
+        "startDate": { "type": "string", "maxLength": 40 },
+        "endDate": { "type": "string", "maxLength": 40 },
+        "instrumentVersionId": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["draft", "in_progress", "finalized", "archived"] },
+        "p1Finalized": { "type": "boolean" },
+        "p2Finalized": { "type": "boolean" },
+        "formulaVerified": { "type": "boolean" },
+        "lastActiveIndicatorId": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["periodId", "institutionId", "yearLabel", "instrumentVersionId", "status", "p1Finalized", "p2Finalized", "createdAt", "updatedAt"]
+    },
+    "IndicatorResponse": {
+      "title": "Kepala RA Indicator Input",
+      "description": "Self-input data, notes, and completion state for a single PKKM indicator.",
+      "type": "object",
+      "properties": {
+        "responseId": { "type": "string", "maxLength": 200 },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "periodId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "indicatorId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "komponenCode": { "type": "string", "maxLength": 16 },
+        "kepalaNote": { "type": "string", "maxLength": 4000 },
+        "completionStatus": { "type": "string", "enum": ["empty", "draft", "complete"] },
+        "checkedEvidences": { "type": "array" },
+        "updatedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["institutionId", "periodId", "indicatorId", "completionStatus", "updatedBy", "updatedAt"]
+    },
+    "AssessmentScore": {
+      "title": "Independent Assessor Score",
+      "description": "Isolated score, note, and verified evidence links submitted by Penilai 1 or Penilai 2.",
+      "type": "object",
+      "properties": {
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "periodId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "indicatorId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "assessorId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "assessorRole": { "type": "string", "enum": ["PENILAI_1", "PENILAI_2"] },
+        "score": { "type": "number" },
+        "note": { "type": "string", "maxLength": 2000 },
+        "checkedEvidenceIds": { "type": "array" },
+        "status": { "type": "string", "enum": ["draft", "finalized"] },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["institutionId", "periodId", "indicatorId", "assessorId", "assessorRole", "score", "status", "updatedAt"]
+    },
+    "AssessmentNote": {
+      "title": "Assessor Summary Recommendation",
+      "description": "Overall summary, recommendation, and finalization state per assessor per period.",
+      "type": "object",
+      "properties": {
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "periodId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "assessorId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "assessorRole": { "type": "string", "enum": ["PENILAI_1", "PENILAI_2"] },
+        "recommendation": { "type": "string", "maxLength": 4000 },
+        "finalized": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["institutionId", "periodId", "assessorId", "assessorRole", "recommendation", "finalized", "updatedAt"]
+    },
+    "RecommendationItem": {
+      "title": "Rekomendasi & Rencana Tindak Lanjut (Format 10)",
+      "description": "Editable follow-up plan linked to assessor findings per institution and period.",
+      "type": "object",
+      "properties": {
+        "recId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "periodId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "sourceRole": { "type": "string", "enum": ["PENILAI_1", "PENILAI_2", "GABUNGAN"] },
+        "komponenNama": { "type": "string", "maxLength": 200 },
+        "temuan": { "type": "string", "maxLength": 2000 },
+        "rekomendasi": { "type": "string", "maxLength": 2000 },
+        "rencanaTindakLanjut": { "type": "string", "maxLength": 2000 },
+        "penanggungJawab": { "type": "string", "maxLength": 160 },
+        "targetWaktu": { "type": "string", "maxLength": 80 },
+        "status": { "type": "string", "enum": ["DRAFT", "APPROVED"] },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["recId", "institutionId", "periodId", "sourceRole", "komponenNama", "temuan", "rekomendasi", "status", "updatedAt"]
+    },
+    "ScoreHistory": {
+      "title": "Immutable Score Change & Lock/Unlock History",
+      "description": "Append-only audit trail recording score changes and Super Admin unlock actions.",
+      "type": "object",
+      "properties": {
+        "historyId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "periodId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "indicatorId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "assessorRole": { "type": "string", "enum": ["PENILAI_1", "PENILAI_2"] },
+        "actorUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "actorName": { "type": "string", "maxLength": 160 },
+        "oldScore": { "type": "number" },
+        "newScore": { "type": "number" },
+        "reason": { "type": "string", "maxLength": 1000 },
+        "actionType": { "type": "string", "enum": ["SCORE_CHANGE", "LOCK", "UNLOCK"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["historyId", "institutionId", "periodId", "indicatorId", "assessorRole", "actorUid", "reason", "actionType", "createdAt"]
+    },
+    "DocumentTemplate": {
+      "title": "Document Automation Template",
+      "description": "Reusable A4 official document template managed by Super Admin.",
+      "type": "object",
+      "properties": {
+        "templateId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "category": { "type": "string", "maxLength": 80 },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["templateId", "category", "title", "updatedAt"]
+    },
+    "GeneratedDocument": {
+      "title": "Generated Administrative Document",
+      "description": "Auto-generated, editable administrative document with DRAFT/APPROVED status.",
+      "type": "object",
+      "properties": {
+        "docId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "periodId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "templateId": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "maxLength": 80 },
+        "title": { "type": "string", "maxLength": 250 },
+        "docNumber": { "type": "string", "maxLength": 120 },
+        "bodyContent": { "type": "string", "maxLength": 40000 },
+        "status": { "type": "string", "enum": ["DRAFT", "APPROVED"] },
+        "createdBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["docId", "institutionId", "periodId", "category", "title", "bodyContent", "status", "createdBy", "createdAt", "updatedAt"]
+    },
+    "EvidenceFile": {
+      "title": "Physical Evidence File",
+      "description": "Uploaded evidence document or photo mapped to one or more indicators with revision history.",
+      "type": "object",
+      "properties": {
+        "evidenceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "periodId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "indicatorId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "linkedIndicatorIds": { "type": "array" },
+        "fileName": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "mimeType": { "type": "string", "maxLength": 120 },
+        "sizeBytes": { "type": "number" },
+        "storagePath": { "type": "string", "maxLength": 500 },
+        "downloadUrl": { "type": "string", "maxLength": 2000 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "verificationStatus": { "type": "string", "enum": ["not_uploaded", "uploaded", "pending", "verified", "needs_revision"] },
+        "verificationNote": { "type": "string", "maxLength": 1000 },
+        "revisionHistory": { "type": "array" },
+        "uploadedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["evidenceId", "institutionId", "periodId", "indicatorId", "fileName", "mimeType", "sizeBytes", "verificationStatus", "uploadedBy", "createdAt", "updatedAt"]
+    },
+    "AuditLog": {
+      "title": "Immutable Security Audit Log",
+      "description": "Append-only operational audit record.",
+      "type": "object",
+      "properties": {
+        "logId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "institutionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorUid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "actorRole": { "type": "string", "maxLength": 40 },
+        "action": { "type": "string", "maxLength": 80 },
+        "summary": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["institutionId", "actorUid", "actorRole", "action", "summary", "createdAt"]
+    },
+    "SystemSetting": {
+      "title": "System Configuration",
+      "description": "Global platform configuration controlled by Super Admin.",
+      "type": "object",
+      "properties": {
+        "settingId": { "type": "string", "maxLength": 64 },
+        "maxFileSizeMb": { "type": "number" },
+        "activeInstrumentVersion": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["maxFileSizeMb", "activeInstrumentVersion", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserPublic" },
+      "description": "Public workspace profile metadata isolated by user owner or Super Admin."
+    },
+    "/users/{userId}/private/info": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Isolated PII subcollection (email, phone, photoUrl)."
+    },
+    "/institutions/{institutionId}": {
+      "schema": { "$ref": "#/entities/Institution" },
+      "description": "Tenant RA institution record and consolidated profile data."
+    },
+    "/memberships/{membershipId}": {
+      "schema": { "$ref": "#/entities/Membership" },
+      "description": "Authoritative RBAC membership per (uid, institutionId)."
+    },
+    "/teamInvitations/{inviteId}": {
+      "schema": { "$ref": "#/entities/TeamInvitation" },
+      "description": "Email-based role invitations claimable by verified Google users."
+    },
+    "/masterAssessors/{assessorId}": {
+      "schema": { "$ref": "#/entities/MasterAssessor" },
+      "description": "Cross-institution master Kemenag assessor directory."
+    },
+    "/masterInstruments/{versionId}": {
+      "schema": { "$ref": "#/entities/MasterInstrument" },
+      "description": "Versioned PKKM_v.26 untuk RA master instruments."
+    },
+    "/assessmentPeriods/{periodId}": {
+      "schema": { "$ref": "#/entities/AssessmentPeriod" },
+      "description": "Annual assessment periods per RA institution."
+    },
+    "/indicatorResponses/{responseId}": {
+      "schema": { "$ref": "#/entities/IndicatorResponse" },
+      "description": "Kepala RA indicator notes and completion records."
+    },
+    "/assessmentScores/{scoreId}": {
+      "schema": { "$ref": "#/entities/AssessmentScore" },
+      "description": "Independent Penilai 1 and Penilai 2 scores per indicator."
+    },
+    "/assessmentNotes/{noteId}": {
+      "schema": { "$ref": "#/entities/AssessmentNote" },
+      "description": "Assessor final recommendations and lock flags per period."
+    },
+    "/recommendations/{recId}": {
+      "schema": { "$ref": "#/entities/RecommendationItem" },
+      "description": "Rekomendasi & Rencana Tindak Lanjut (RTL Format 10) per period."
+    },
+    "/scoreHistory/{historyId}": {
+      "schema": { "$ref": "#/entities/ScoreHistory" },
+      "description": "Append-only score change and Super Admin unlock audit history."
+    },
+    "/documentTemplates/{templateId}": {
+      "schema": { "$ref": "#/entities/DocumentTemplate" },
+      "description": "Master document automation templates."
+    },
+    "/generatedDocuments/{docId}": {
+      "schema": { "$ref": "#/entities/GeneratedDocument" },
+      "description": "Generated institutional documents with DRAFT/APPROVED lifecycle."
+    },
+    "/evidenceFiles/{evidenceId}": {
+      "schema": { "$ref": "#/entities/EvidenceFile" },
+      "description": "Uploaded evidence metadata, multi-indicator links, revisions, and verification states."
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Append-only operational audit logs."
+    },
+    "/systemSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/SystemSetting" },
+      "description": "Global Super Admin platform configuration."
+    }
+  }
+}
