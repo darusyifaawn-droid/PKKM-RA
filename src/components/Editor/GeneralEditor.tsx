@@ -80,10 +80,10 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
         <div className="border-b border-slate-100 pb-4 mb-6">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Shield className="w-5 h-5 text-emerald-700" />
-            <span>Unggah Logo & Foto Identitas Dokumen & Slide PPT</span>
+            <span>Unggah Logo & Foto Identitas Dokumen Resmi</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Foto ini otomatis terintegrasi pada kop surat, sampul cover A4, lembar profil, dan slide presentasi PPT PKKM.
+            Foto ini otomatis terintegrasi pada kop surat, sampul cover A4, dan lembar profil instansi.
           </p>
         </div>
 
@@ -217,7 +217,7 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
           <div className="border border-slate-200 rounded-lg p-3 flex flex-col items-center text-center bg-slate-50/50 justify-between">
             <div>
               <span className="text-xs font-bold text-slate-800 block mb-1">Foto Bersama Dewan Guru</span>
-              <span className="text-[10px] text-emerald-800 font-semibold block mb-2">Khusus Slide Penutup PPT</span>
+              <span className="text-[10px] text-slate-500 block mb-2">Dokumentasi Dewan Guru & Komite</span>
               <div className="w-24 h-24 rounded-lg bg-white border border-slate-200 p-1 flex items-center justify-center overflow-hidden mb-2 shadow-xs mx-auto">
                 <img
                   src={institution.fotoBersamaUrl || "/src/assets/images/foto_guru_komite_1792723695121.jpg"}
@@ -928,14 +928,11 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Share2 className="w-5 h-5 text-emerald-700" />
-              <span>Media Sosial & Saluran Informasi Publik (Company Profile)</span>
+              <span>Media Sosial & Saluran Informasi Publik</span>
             </h2>
-            <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-sm border border-emerald-200">
-              Tampil di Slide PPT
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Akun media sosial madrasah untuk keperluan Company Profile, publikasi digital, dan slide presentasi akreditasi/PKKM.
+            Akun media sosial dan tautan website resmi lembaga untuk publikasi digital dan informasi publik.
           </p>
         </div>
 
@@ -1295,14 +1292,11 @@ export const GeneralEditor: React.FC<GeneralEditorProps> = ({
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-emerald-700" />
-              <span>Motto & Sambutan / Prakata Kepala Madrasah (Slide Pembuka)</span>
+              <span>Motto & Sambutan / Prakata Kepala Madrasah</span>
             </h2>
-            <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-sm border border-emerald-200">
-              Slide 1 & 2 PPT
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Motto lembaga dan prakata resmi Kepala Madrasah yang menyambut kedatangan Asesor / Pengawas Pembina dalam presentasi.
+            Motto lembaga dan prakata resmi Kepala Madrasah dalam dokumen profil lembaga.
           </p>
         </div>
 

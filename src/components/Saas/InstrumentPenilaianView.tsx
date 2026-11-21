@@ -86,58 +86,61 @@ export const InstrumentPenilaianView: React.FC<{
   return (
     <div className="space-y-6">
       {/* Header & Filter Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-bold text-slate-900">
-              Instrumen Resmi PKKM_v.26 untuk RA ({activeIndicators.length} Indikator)
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Seluruh 4 komponen dan 25 subkomponen dari instrumen asli. Isi data, cek daftar bukti wajib, buat dokumen otomatis, dan unggah bukti fisik per butir.
-            </p>
+      <div className="bg-white border border-[#064e3b]/15 rounded-xl overflow-hidden shadow-xs">
+        <div className="h-1 bg-gradient-to-r from-[#064e3b] via-[#d4af37] to-[#064e3b]" />
+        <div className="p-6 space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h1 className="font-display text-xl font-bold text-[#064e3b]">
+                Instrumen Resmi PKKM_v.26 untuk RA ({activeIndicators.length} Indikator)
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Seluruh 4 komponen dan 25 subkomponen dari instrumen asli. Isi data, cek daftar bukti wajib, buat dokumen otomatis, dan unggah bukti fisik per butir.
+              </p>
+            </div>
+            <div className="relative w-full lg:w-72">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari kode / indikator / bukti..."
+                className="w-full pl-9 pr-3 py-2 text-xs bg-[#f7f8f5] border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#047857]"
+              />
+            </div>
           </div>
-          <div className="relative w-full lg:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari kode / indikator / bukti..."
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-emerald-600"
-            />
-          </div>
-        </div>
 
-        {/* Component Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-slate-100 text-xs">
-          <button
-            type="button"
-            onClick={() => setSelectedComp('ALL')}
-            className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-              selectedComp === 'ALL'
-                ? 'bg-emerald-700 text-white'
-                : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Semua ({activeIndicators.length})
-          </button>
-          {MASTER_COMPONENTS.map((c) => {
-            const count = activeIndicators.filter((i) => i.komponenCode === c.code).length;
-            return (
-              <button
-                key={c.code}
-                type="button"
-                onClick={() => setSelectedComp(c.code)}
-                className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
-                  selectedComp === c.code
-                    ? 'bg-emerald-700 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {c.nomor}. {c.nama} ({count})
-              </button>
-            );
-          })}
+          {/* Component Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-slate-100 text-xs">
+            <button
+              type="button"
+              onClick={() => setSelectedComp('ALL')}
+              className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                selectedComp === 'ALL'
+                  ? 'bg-[#064e3b] text-[#f3d46b] border border-[#d4af37]/40'
+                  : 'bg-[#f1f5f2] text-slate-700 hover:text-[#064e3b]'
+              }`}
+            >
+              Semua ({activeIndicators.length})
+            </button>
+            {MASTER_COMPONENTS.map((c) => {
+              const count = activeIndicators.filter((i) => i.komponenCode === c.code).length;
+              return (
+                <button
+                  key={c.code}
+                  type="button"
+                  onClick={() => setSelectedComp(c.code)}
+                  className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                    selectedComp === c.code
+                      ? 'bg-[#064e3b] text-[#f3d46b] border border-[#d4af37]/40'
+                      : 'bg-[#f1f5f2] text-slate-700 hover:text-[#064e3b]'
+                  }`}
+                >
+                  {c.nomor}. {c.nama} ({count})
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -154,7 +157,7 @@ export const InstrumentPenilaianView: React.FC<{
             <div
               key={ind.id}
               className={`bg-white border rounded-xl p-5 space-y-4 transition-colors ${
-                isEditing ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-slate-200'
+                isEditing ? 'border-[#b48a1e] ring-1 ring-[#d4af37]/60' : 'border-[#064e3b]/15'
               }`}
             >
               <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">

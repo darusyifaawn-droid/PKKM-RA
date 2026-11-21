@@ -115,37 +115,42 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
   };
 
   const SidebarContent = (
-    <div className="flex flex-col h-full bg-white border-r border-slate-200 w-68">
+    <div className="flex flex-col h-full bg-gradient-to-b from-[#064e3b] via-[#054434] to-[#032e22] text-emerald-50 border-r border-[#d4af37]/30 w-68">
       {/* Brand Title */}
-      <div className="h-16 px-4 border-b border-slate-200 flex items-center justify-between shrink-0">
-        <div className="min-w-0">
-          <span className="text-sm font-bold tracking-tight text-slate-900 whitespace-nowrap block truncate">
-            PKKM RA SMART SYSTEM
-          </span>
-          <span className="text-[11px] text-emerald-700 font-medium whitespace-nowrap block truncate">
-            Multi-Tenant Kemenag RI
-          </span>
+      <div className="h-16 px-4 border-b border-white/10 flex items-center justify-between shrink-0 bg-[#043927]/60">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/50 flex items-center justify-center shrink-0">
+            <Award className="w-4 h-4 text-[#f3d46b]" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-sm font-bold tracking-tight text-white whitespace-nowrap block truncate">
+              PKKM RA SMART SYSTEM
+            </span>
+            <span className="text-[11px] text-[#f3d46b] font-medium whitespace-nowrap block truncate">
+              Multi-Tenant Kemenag RI
+            </span>
+          </div>
         </div>
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
-          className="lg:hidden p-1.5 text-slate-500 hover:text-slate-900 cursor-pointer"
+          className="lg:hidden p-1.5 text-emerald-100 hover:text-white cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Tenant & Period Selector */}
-      <div className="p-3 border-b border-slate-200 space-y-2 bg-slate-50/70">
+      <div className="p-3 border-b border-white/10 space-y-2 bg-[#043927]/75">
         <div>
-          <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+          <label className="text-[11px] font-semibold text-emerald-100/80 block mb-1">
             Lembaga RA Aktif
           </label>
           <select
             value={activeInstitution.institutionId}
             onChange={(e) => setActiveInstitutionId(e.target.value)}
             disabled={institutions.length === 0}
-            className="w-full px-2.5 py-1.5 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg disabled:opacity-60"
+            className="w-full px-2.5 py-1.5 text-xs font-semibold text-white bg-[#032b1f] border border-[#d4af37]/35 hover:border-[#d4af37]/65 rounded-lg disabled:opacity-60 transition-colors"
           >
             {institutions.length === 0 ? (
               <option value={activeInstitution.institutionId}>Belum ada RA aktif</option>
@@ -161,14 +166,14 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
 
         <div className="grid grid-cols-2 gap-1.5">
           <div>
-            <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+            <label className="text-[11px] font-semibold text-emerald-100/80 block mb-1">
               Periode
             </label>
             <select
               value={activePeriod.periodId}
               onChange={(e) => setActivePeriodId(e.target.value)}
               disabled={periods.length === 0}
-              className="w-full px-2 py-1.5 text-xs bg-white border border-slate-200 rounded-lg disabled:opacity-60"
+              className="w-full px-2 py-1.5 text-xs font-medium text-white bg-[#032b1f] border border-[#d4af37]/30 hover:border-[#d4af37]/60 rounded-lg disabled:opacity-60 transition-colors"
             >
               {periods.length === 0 ? (
                 <option value={activePeriod.periodId}>{activePeriod.yearLabel}</option>
@@ -182,14 +187,14 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
             </select>
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-slate-500 block mb-1">
+            <label className="text-[11px] font-semibold text-emerald-100/80 block mb-1">
               {isDemoRoleSwitcherAllowed ? 'Simulasi Role' : 'Peran Terkunci'}
             </label>
             {isDemoRoleSwitcherAllowed ? (
               <select
                 value={activeRole}
                 onChange={(e) => setActiveRole(e.target.value as UserRole)}
-                className="w-full px-2 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+                className="w-full px-2 py-1.5 text-xs font-medium text-white bg-[#032b1f] border border-[#d4af37]/30 hover:border-[#d4af37]/60 rounded-lg transition-colors"
               >
                 <option value="SUPER_ADMIN">Super Admin</option>
                 <option value="ADMIN_LEMBAGA">Admin Lembaga</option>
@@ -199,7 +204,7 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
               </select>
             ) : (
               <div
-                className="w-full px-2 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg truncate"
+                className="w-full px-2 py-1.5 text-xs font-semibold text-[#f3d46b] bg-[#032b1f] border border-[#d4af37]/40 rounded-lg truncate"
                 title="Peran dikunci otomatis sesuai hak akses akun Google Anda"
               >
                 {activeRole.replace('_', ' ')}
@@ -211,7 +216,7 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
 
       {/* Scrollable Navigation Links: Panel Admin Utama + Menu Lanjutan */}
       <nav className="flex-1 overflow-y-auto p-2.5 space-y-1">
-        <div className="px-3 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+        <div className="px-3 pt-1.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#f3d46b]/90">
           Panel Admin Otomatis
         </div>
         {primaryNav.map((item) => {
@@ -225,29 +230,29 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
                 setActiveMenu(item.key);
                 setMobileOpen(false);
               }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer ${
                 active
-                  ? 'bg-emerald-50 text-emerald-900 font-semibold border border-emerald-200'
-                  : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-white/14 text-white font-semibold border border-[#d4af37]/55 shadow-xs'
+                  : 'text-emerald-100/85 hover:bg-white/8 hover:text-white border border-transparent'
               }`}
             >
-              <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-emerald-700' : 'text-slate-400'}`} />
+              <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-[#f3d46b]' : 'text-emerald-300/75'}`} />
               <span className="truncate">{item.label}</span>
             </button>
           );
         })}
 
-        <div className="pt-3 mt-2 border-t border-slate-200">
+        <div className="pt-3 mt-2 border-t border-white/10">
           <button
             type="button"
             onClick={() => setShowAdvancedMenu((v) => !v)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:bg-slate-50 hover:text-slate-800 cursor-pointer"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider text-emerald-200/80 hover:bg-white/8 hover:text-white cursor-pointer transition-colors"
           >
             <span>Menu Lanjutan ({advancedNav.length})</span>
             {advancedExpanded ? (
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronDown className="w-3.5 h-3.5 text-[#f3d46b]" />
             ) : (
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronRight className="w-3.5 h-3.5 text-emerald-200/70" />
             )}
           </button>
 
@@ -260,7 +265,7 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
                 return (
                   <React.Fragment key={item.key}>
                     {showGroup && (
-                      <div className="px-3 pt-2 pb-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <div className="px-3 pt-2 pb-0.5 text-[10px] font-bold uppercase tracking-wider text-[#f3d46b]/70">
                         {item.group}
                       </div>
                     )}
@@ -270,13 +275,13 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
                         setActiveMenu(item.key);
                         setMobileOpen(false);
                       }}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-150 whitespace-nowrap shrink-0 cursor-pointer ${
                         active
-                          ? 'bg-emerald-50 text-emerald-800 font-semibold'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          ? 'bg-white/14 text-white font-semibold border border-[#d4af37]/45'
+                          : 'text-emerald-100/80 hover:bg-white/8 hover:text-white border border-transparent'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-emerald-700' : 'text-slate-400'}`} />
+                      <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-[#f3d46b]' : 'text-emerald-300/70'}`} />
                       <span className="truncate">{item.label}</span>
                     </button>
                   </React.Fragment>
@@ -288,39 +293,39 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
       </nav>
 
       {/* Bottom Help, AI Panduan & Cloud Session */}
-      <div className="p-3 border-t border-slate-200 space-y-1.5 text-xs">
+      <div className="p-3 border-t border-white/10 bg-[#03281d]/80 space-y-1.5 text-xs">
         <button
           type="button"
           onClick={() => {
             setActiveMenu('ai_assistant');
             setMobileOpen(false);
           }}
-          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
             activeMenu === 'ai_assistant'
-              ? 'bg-emerald-50 text-emerald-800 font-semibold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              ? 'bg-white/14 text-white font-semibold border border-[#d4af37]/45'
+              : 'text-emerald-100/85 hover:text-white hover:bg-white/8'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-emerald-700" />
+          <Sparkles className="w-4 h-4 text-[#f3d46b]" />
           <span>Asisten AI PKKM</span>
         </button>
         <button
           type="button"
           onClick={() => setHelpOpen(true)}
-          className="w-full flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg cursor-pointer"
+          className="w-full flex items-center gap-2 px-3 py-2 text-emerald-100/85 hover:text-white hover:bg-white/8 rounded-lg cursor-pointer transition-colors"
         >
-          <HelpCircle className="w-4 h-4 text-emerald-700" />
+          <HelpCircle className="w-4 h-4 text-[#f3d46b]" />
           <span>Pusat Bantuan PKKM</span>
         </button>
-        <div className="px-3 py-1 text-[11px] text-slate-500 flex items-center justify-between">
+        <div className="px-3 py-1 text-[11px] text-emerald-200/75 flex items-center justify-between">
           <span>Cloud Sync</span>
           <span
             className={
               isCloudSyncing
-                ? 'text-sky-700 font-semibold'
+                ? 'text-sky-300 font-semibold'
                 : isCloudConnected
-                ? 'text-emerald-700 font-semibold'
-                : 'text-amber-700 font-semibold'
+                ? 'text-emerald-300 font-semibold'
+                : 'text-[#f3d46b] font-semibold'
             }
           >
             {isCloudSyncing ? 'Menyinkron...' : isCloudConnected ? 'Tersinkron' : 'Lokal'}
@@ -343,7 +348,7 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
   ];
 
   return (
-    <div className="app-main-shell min-h-screen bg-slate-50 text-slate-800 flex">
+    <div className="app-main-shell min-h-screen bg-[#f7f8f5] text-slate-900 flex">
       {/* Desktop Permanent Sidebar */}
       <aside className="no-print hidden lg:block shrink-0 sticky top-0 h-screen">
         {SidebarContent}
@@ -352,7 +357,7 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
       {/* Mobile Drawer */}
       {mobileOpen && (
         <div className="no-print fixed inset-0 z-50 lg:hidden flex">
-          <div className="fixed inset-0 bg-slate-900/50" onClick={() => setMobileOpen(false)} />
+          <div className="fixed inset-0 bg-[#022017]/60 backdrop-blur-[1px]" onClick={() => setMobileOpen(false)} />
           <div className="relative z-10 h-full">{SidebarContent}</div>
         </div>
       )}
@@ -360,28 +365,28 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar (3-zone contract) */}
-        <header className="no-print h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-30">
+        <header className="no-print h-16 bg-white/95 backdrop-blur-xs border-b border-[#064e3b]/12 px-4 sm:px-6 flex items-center justify-between gap-4 sticky top-0 z-30">
           {/* Left: Mobile drawer trigger + Breadcrumb */}
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+              className="lg:hidden p-2 text-[#064e3b] hover:bg-emerald-50 rounded-lg cursor-pointer"
               aria-label="Buka Menu"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2 text-xs text-slate-500 truncate">
-              <span className="font-semibold text-slate-800 truncate">{activeInstitution.name}</span>
-              <span aria-hidden="true">/</span>
-              <span className="truncate">{currentMenuObj.label}</span>
+              <span className="font-semibold text-[#064e3b] truncate">{activeInstitution.name}</span>
+              <span aria-hidden="true" className="text-[#b48a1e]">/</span>
+              <span className="truncate font-medium text-slate-600">{currentMenuObj.label}</span>
             </div>
           </div>
 
           {/* Right: Quick Print, Notifications & Account Auth */}
           <div className="flex items-center gap-2.5 shrink-0">
             {statusMessage && (
-              <span className="hidden xl:inline-block text-xs text-emerald-700 font-medium truncate max-w-xs">
+              <span className="hidden xl:inline-block text-xs text-[#047857] font-medium truncate max-w-xs">
                 {statusMessage}
               </span>
             )}
@@ -390,9 +395,9 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
               <button
                 type="button"
                 onClick={handleQuickPrintJump}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#6b4f09] bg-[#fdf8e8] hover:bg-[#f7ecc6] border border-[#d4af37]/70 rounded-lg whitespace-nowrap shrink-0 cursor-pointer transition-colors"
               >
-                <Printer className="w-3.5 h-3.5 text-emerald-700" />
+                <Printer className="w-3.5 h-3.5 text-[#9a7414]" />
                 <span className="hidden sm:inline">Cetak Laporan A4</span>
               </button>
             )}
@@ -401,20 +406,20 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
               <button
                 type="button"
                 onClick={() => setNotifOpen((v) => !v)}
-                className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                className="relative p-2 text-slate-600 hover:text-[#064e3b] hover:bg-emerald-50/70 rounded-lg cursor-pointer transition-colors"
                 aria-label="Notifikasi"
               >
                 <Bell className="w-4 h-4" />
                 {notifications.length > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 text-[10px] font-bold px-1 rounded-full bg-emerald-700 text-white tabular-nums">
+                  <span className="absolute -top-0.5 -right-0.5 text-[10px] font-bold px-1 rounded-full bg-[#064e3b] text-[#f3d46b] tabular-nums border border-[#d4af37]/50">
                     {notifications.length}
                   </span>
                 )}
               </button>
 
               {notifOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-lg p-3 z-50 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-900 pb-1 border-b border-slate-100">
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-[#064e3b]/15 rounded-xl shadow-lg p-3 z-50 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-[#064e3b] pb-1.5 border-b border-slate-100">
                     <span>Notifikasi Sistem</span>
                     <button
                       type="button"
@@ -432,7 +437,7 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
                         setActiveMenu(n.targetMenu);
                         setNotifOpen(false);
                       }}
-                      className="w-full text-left p-2 rounded-lg hover:bg-slate-50 text-xs space-y-0.5 cursor-pointer"
+                      className="w-full text-left p-2 rounded-lg hover:bg-[#f7f8f5] text-xs space-y-0.5 cursor-pointer transition-colors"
                     >
                       <strong className="text-slate-900 block">{n.title}</strong>
                       <span className="text-slate-500 block">{n.detail}</span>
@@ -450,7 +455,7 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
                 <button
                   type="button"
                   onClick={signOutUser}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#064e3b] bg-[#f1f5f2] hover:bg-[#e5ede7] border border-[#064e3b]/15 rounded-lg whitespace-nowrap shrink-0 cursor-pointer transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span>Keluar</span>
@@ -460,9 +465,9 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
               <button
                 type="button"
                 onClick={signInWithGoogle}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#064e3b] hover:bg-[#043927] border border-[#d4af37]/40 rounded-lg whitespace-nowrap shrink-0 cursor-pointer transition-colors"
               >
-                <LogIn className="w-3.5 h-3.5" />
+                <LogIn className="w-3.5 h-3.5 text-[#f3d46b]" />
                 <span>Masuk Google Cloud</span>
               </button>
             )}
@@ -475,7 +480,7 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
         </main>
 
         {/* Mobile Bottom Quick Nav (<= 15% height, lg:hidden) */}
-        <nav className="no-print lg:hidden fixed bottom-0 inset-x-0 z-30 h-14 bg-white border-t border-slate-200 flex items-center justify-around px-1">
+        <nav className="no-print lg:hidden fixed bottom-0 inset-x-0 z-30 h-14 bg-[#064e3b] border-t border-[#d4af37]/35 flex items-center justify-around px-1">
           {mobileQuickTabs.map((tab) => {
             const Icon = tab.icon;
             const active = activeMenu === tab.key;
@@ -484,8 +489,8 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveMenu(tab.key)}
-                className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 text-[10px] font-semibold cursor-pointer ${
-                  active ? 'text-emerald-700' : 'text-slate-500'
+                className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 text-[10px] font-semibold cursor-pointer transition-colors ${
+                  active ? 'text-[#f3d46b]' : 'text-emerald-100/75 hover:text-white'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -498,23 +503,28 @@ export const SaasShell: React.FC<{ children: React.ReactNode }> = ({ children })
 
       {/* Help Center Modal */}
       {helpOpen && (
-        <div className="no-print fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-xl max-w-lg w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="text-base font-bold text-slate-900">Pusat Bantuan PKKM RA SMART SYSTEM</h2>
-              <button
-                type="button"
-                onClick={() => setHelpOpen(false)}
-                className="text-slate-400 hover:text-slate-900 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="text-xs text-slate-600 space-y-2 leading-relaxed">
-              <p><strong>1. Prinsip Input Sekali:</strong> Lengkapi data lembaga, Kepala RA, Guru/PTK, Penilai, dan Program Kerja sekali saja. Semua dokumen administrasi dan laporan A4 otomatis terisi.</p>
-              <p><strong>2. Instrumen 96 Indikator:</strong> Seluruh butir dari <em>PKKM_v.26 untuk RA</em> tersedia lengkap beserta daftar bukti wajib.</p>
-              <p><strong>3. Penilai Independen:</strong> Penilai 1 dan Penilai 2 mengisi skor secara terpisah (skala 1–4) dan dapat mengunci hasil setelah seluruh bukti diverifikasi.</p>
-              <p><strong>4. Ekspor Lengkap:</strong> Unduh hasil sebagai cetakan A4/PDF, Slide Presentasi 16:9, Word (.docx), Excel (.xlsx), dan arsip ZIP.</p>
+        <div className="no-print fixed inset-0 z-50 bg-[#022017]/60 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="bg-white border border-[#d4af37]/50 rounded-xl max-w-lg w-full overflow-hidden shadow-xl">
+            <div className="h-1 bg-gradient-to-r from-[#064e3b] via-[#d4af37] to-[#064e3b]" />
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="font-display text-base font-bold text-[#064e3b]">
+                  Pusat Bantuan PKKM RA SMART SYSTEM
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setHelpOpen(false)}
+                  className="text-slate-400 hover:text-slate-900 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="text-xs text-slate-600 space-y-2 leading-relaxed">
+                <p><strong>1. Prinsip Input Sekali:</strong> Lengkapi data lembaga, Kepala RA, Guru/PTK, Penilai, dan Program Kerja sekali saja. Semua dokumen administrasi dan laporan A4 otomatis terisi.</p>
+                <p><strong>2. Instrumen 96 Indikator:</strong> Seluruh butir dari <em>PKKM_v.26 untuk RA</em> tersedia lengkap beserta daftar bukti wajib.</p>
+                <p><strong>3. Penilai Independen:</strong> Penilai 1 dan Penilai 2 mengisi skor secara terpisah (skala 1–4) dan dapat mengunci hasil setelah seluruh bukti diverifikasi.</p>
+                <p><strong>4. Ekspor Lengkap:</strong> Unduh hasil sebagai cetakan A4/PDF, Slide Presentasi 16:9, Word (.docx), Excel (.xlsx), dan arsip ZIP.</p>
+              </div>
             </div>
           </div>
         </div>

@@ -170,23 +170,14 @@ export const PhotosEditor: React.FC<PhotosEditorProps> = ({
           <div>
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Camera className="w-5 h-5 text-emerald-700" />
-              <span>Pusat Unggah Foto Bukti Fisik PKKM & Slide Presentasi</span>
+              <span>Pusat Unggah Foto Bukti Fisik & Dokumentasi</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Setiap foto yang diunggah di sini otomatis <strong>ditayangkan utuh di Slide Presentasi PPT</strong> dan dicetak rapi pada Album Bukti Fisik A4.
+              Setiap foto yang diunggah di sini dicetak rapi pada Album Bukti Fisik A4 untuk kelengkapan administrasi lembaga.
             </p>
           </div>
 
           <div className="flex items-center gap-2 self-start md:self-auto">
-            {onNavigateToPresentation && (
-              <button
-                onClick={onNavigateToPresentation}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors cursor-pointer"
-              >
-                <Presentation className="w-3.5 h-3.5 text-emerald-700" />
-                <span>Buka Slide PPT</span>
-              </button>
-            )}
             <button
               onClick={onNavigateToPrint}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors cursor-pointer"
@@ -204,7 +195,7 @@ export const PhotosEditor: React.FC<PhotosEditorProps> = ({
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Slot Unggah Foto Bukti Wajib PKKM (Otomatis Masuk PPT & Laporan)</span>
+              <span>Slot Unggah Foto Bukti Wajib PKKM (Dokumentasi Album Laporan)</span>
             </span>
             <span className="text-[11px] text-emerald-700 font-medium">Klik tombol "Unggah" pada masing-masing kebutuhan</span>
           </div>
@@ -519,7 +510,7 @@ export const PhotosEditor: React.FC<PhotosEditorProps> = ({
                 Unggah Banyak Foto Sekaligus (Multi-Upload)
               </p>
               <p className="text-[11px] text-slate-500">
-                Pilih puluhan foto kegiatan madrasah dari HP/Komputer. Seluruh foto yang diunggah akan otomatis dibuatkan slide tersendiri pada presentasi PPT!
+                Pilih puluhan foto kegiatan madrasah dari perangkat Anda untuk dokumentasi album fisik dan laporan.
               </p>
             </div>
 
@@ -570,7 +561,7 @@ export const PhotosEditor: React.FC<PhotosEditorProps> = ({
               Koleksi Foto Kegiatan ({photoEvidences.length} Foto Tersimpan)
             </span>
             <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              Tampil di Slide PPT & Album A4
+              Dokumentasi Album A4
             </span>
           </div>
 
@@ -688,7 +679,7 @@ export const PhotosEditor: React.FC<PhotosEditorProps> = ({
                 <div className="p-3 pt-0 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="text-[10px] text-emerald-800 font-semibold flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                    <span>Tampil di Slide PPT</span>
+                    <span>Tersimpan di Album</span>
                   </span>
 
                   <button
