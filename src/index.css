@@ -56,11 +56,27 @@
     margin: 0 !important;
     padding: 0 !important;
     background-color: #ffffff !important;
+    background: #ffffff !important;
     color: #000000 !important;
     font-size: 10pt !important;
     line-height: 1.3 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* Ensure outer shell and preview canvas never paint gray/tinted background onto printed pages */
+  .app-main-shell,
+  .app-main-shell > div,
+  .app-main-shell main,
+  .print-root-canvas {
+    display: block !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   /* Container wrapper */
@@ -69,6 +85,8 @@
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
     box-shadow: none !important;
     border: none !important;
   }
@@ -82,7 +100,8 @@
     height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: transparent !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
     box-shadow: none !important;
     border: none !important;
     page-break-after: always !important;
@@ -97,21 +116,27 @@
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: transparent !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
     box-shadow: none !important;
     border: none !important;
     page-break-after: always !important;
     break-after: page !important;
   }
 
-  /* Specific precision rules for the COVER sheet so it NEVER spills onto page 2 */
+  /* Specific precision rules for the COVER sheet so it NEVER spills onto a blank page 2 */
   .cover-sheet {
     box-sizing: border-box !important;
     width: 100% !important;
-    height: 260mm !important;
-    max-height: 260mm !important;
+    height: 254mm !important;
+    max-height: 254mm !important;
+    min-height: 0 !important;
     margin: 0 !important;
-    padding: 6mm !important;
+    padding: 2mm 0 !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
     overflow: hidden !important;
     page-break-after: always !important;
     break-after: page !important;
@@ -135,7 +160,7 @@
     break-inside: avoid !important;
   }
 
-  /* Tables formatting */
+  /* Tables formatting: strictly pure white cells & headers */
   table {
     width: 100% !important;
     page-break-inside: auto;
@@ -152,9 +177,15 @@
   }
 
   th {
-    background-color: #f1f5f9 !important;
+    background-color: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .print-page-wrapper th,
+  .print-page-wrapper td,
+  .print-page-wrapper tr {
+    background-color: #ffffff !important;
   }
 
   img {

@@ -342,6 +342,80 @@ export const PrintView: React.FC<PrintViewProps> = ({
     return 'Anggota & Pengumpul Bukti Fisik Portofolio';
   };
 
+  interface SignatureSlot {
+    dateLine?: string;
+    topLabel?: string;
+    roleLabel: string;
+    spacerBadge?: string;
+    name: string;
+    idLine?: string;
+  }
+
+  const AlignedSignatureGrid: React.FC<{
+    slots: SignatureSlot[];
+    spaceHeightClass?: string;
+    textSizeClass?: string;
+    className?: string;
+  }> = ({
+    slots,
+    spaceHeightClass = 'h-16',
+    textSizeClass = 'text-[10.5px]',
+    className = '',
+  }) => {
+    const hasAnyDate = slots.some((s) => Boolean(s.dateLine));
+    const hasAnyTopLabel = slots.some((s) => Boolean(s.topLabel));
+    const gridColsClass = slots.length === 3 ? 'grid-cols-3 gap-4' : 'grid-cols-2 gap-8';
+
+    return (
+      <div className={`avoid-break text-center text-black ${textSizeClass} ${className}`}>
+        {hasAnyDate && (
+          <div className={`grid ${gridColsClass} items-end`}>
+            {slots.map((slot, idx) => (
+              <div key={`date-${idx}`} className="min-h-[1.25em]">
+                {slot.dateLine ? <span>{slot.dateLine}</span> : <span>&nbsp;</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className={`grid ${gridColsClass} items-start`}>
+          {slots.map((slot, idx) => (
+            <div key={`role-${idx}`} className="leading-snug">
+              {hasAnyTopLabel && (
+                <p className="font-semibold min-h-[1.25em]">{slot.topLabel || '\u00A0'}</p>
+              )}
+              <p className="font-normal">{slot.roleLabel}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className={`grid ${gridColsClass} items-center`}>
+          {slots.map((slot, idx) => (
+            <div
+              key={`space-${idx}`}
+              className={`${spaceHeightClass} flex items-center justify-center`}
+            >
+              {slot.spacerBadge ? (
+                <div className="border border-dashed border-black px-3 py-1.5 text-[9px] text-black font-mono bg-white">
+                  {slot.spacerBadge}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+
+        <div className={`grid ${gridColsClass} items-start`}>
+          {slots.map((slot, idx) => (
+            <div key={`name-${idx}`} className="leading-snug">
+              <p className="font-bold underline">{slot.name || '-'}</p>
+              {slot.idLine && <p className="font-mono text-[9.5px]">{slot.idLine}</p>}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderAssessorResultSheet = (role: 'PENILAI_1' | 'PENILAI_2') => {
     const isP1 = role === 'PENILAI_1';
     const summary = isP1 ? rekapV26.penilai1 : rekapV26.penilai2;
@@ -368,8 +442,8 @@ export const PrintView: React.FC<PrintViewProps> = ({
         </div>
 
         {!summary.isComplete && summary.incompleteWarning && (
-          <div className="border border-amber-400 bg-amber-50 p-2.5 text-[10.5px] text-amber-950 flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-700 mt-0.5" />
+          <div className="border border-black bg-white p-2.5 text-[10.5px] text-black flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-black mt-0.5" />
             <div>
               <strong className="block">{summary.incompleteWarning}</strong>
               <span>
@@ -379,7 +453,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
           </div>
         )}
 
-        {/* 2-Column Identity Info Box matching PDF Pages 4 & 5 */}
+        {/* 2-Column Identity Info Box */}
         <div className="grid grid-cols-2 gap-4 text-[10px]">
           <table className="w-full border-collapse">
             <tbody>
@@ -462,37 +536,37 @@ export const PrintView: React.FC<PrintViewProps> = ({
           </table>
         </div>
 
-        {/* Main 4-Component Table matching PDF Pages 4 & 5 */}
-        <table className="w-full text-[11px] border border-black border-collapse tabular-nums">
+        {/* Main 4-Component Table (pure white shading) */}
+        <table className="w-full text-[11px] border border-black border-collapse tabular-nums bg-white">
           <thead>
-            <tr className="bg-[#e8f5e9] font-bold border-b border-black">
-              <th className="p-2 text-center border-r border-black w-12">No</th>
-              <th className="p-2 text-center border-r border-black">Komponen</th>
-              <th className="p-2 text-center w-28">Skor</th>
+            <tr className="bg-white font-bold border-b border-black">
+              <th className="p-2 text-center border-r border-black w-12 bg-white">No</th>
+              <th className="p-2 text-center border-r border-black bg-white">Komponen</th>
+              <th className="p-2 text-center w-28 bg-white">Skor</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-black">
+          <tbody className="divide-y divide-black bg-white">
             {summary.components.map((c) => (
-              <tr key={c.komponenCode}>
+              <tr key={c.komponenCode} className="bg-white">
                 <td className="p-2 text-center border-r border-black font-mono">{c.komponenNomor}</td>
                 <td className="p-2 border-r border-black font-semibold">{c.komponenNama}</td>
                 <td className="p-2 text-center font-mono font-bold text-xs">{c.rawScore}</td>
               </tr>
             ))}
-            <tr className="font-bold bg-slate-50">
+            <tr className="font-bold bg-white">
               <td colSpan={2} className="p-2 text-center border-r border-black">
                 Jumlah Skor
               </td>
               <td className="p-2 text-center font-mono text-xs">{summary.jumlahSkor}</td>
             </tr>
-            <tr className="font-black bg-[#e8f5e9]">
+            <tr className="font-black bg-white">
               <td colSpan={2} className="p-2 text-center border-r border-black">
                 Nilai Kinerja
               </td>
               <td className="p-2 text-center font-mono text-sm">
                 {summary.isComplete ? roundedNilai : '-'}
                 {summary.isComplete && (
-                  <span className="block text-[9px] font-normal text-slate-700">
+                  <span className="block text-[9px] font-normal text-black">
                     ({formatCommaNum(summary.nilaiKinerja, 2)})
                   </span>
                 )}
@@ -501,38 +575,36 @@ export const PrintView: React.FC<PrintViewProps> = ({
           </tbody>
         </table>
 
-        {/* Red Rekomendasi box matching attached PDF */}
-        <div className="border border-black p-3 bg-rose-50/70 min-h-[76px] space-y-1">
-          <p className="font-bold text-[11px] text-rose-700">Rekomendasi:</p>
+        {/* Pure white Rekomendasi box */}
+        <div className="border border-black p-3 bg-white min-h-[76px] space-y-1">
+          <p className="font-bold text-[11px] text-black">Rekomendasi:</p>
           <p className="text-[10.5px] text-black whitespace-pre-line">
             {noteText || 'Pertahankan capaian komponen yang sudah baik dan tingkatkan dokumentasi bukti fisik supervisi serta administrasi akademik.'}
           </p>
         </div>
 
-        {/* Dual Signatures matching attached PDF */}
-        <div className="pt-8 grid grid-cols-2 gap-8 text-center text-[10.5px] avoid-break">
-          <div>
-            <p className="font-normal">Kepala {institution.namaLembaga || '-'},</p>
-            <div className="h-16" />
-            <p className="font-bold underline">{principal.namaLengkap || '-'}</p>
-            <p className="font-mono text-[9.5px]">
-              NIP. {principal.nip || '-'}
-            </p>
-          </div>
-          <div>
-            <p>{evaluators.tempatPenilaian || 'Cirebon'}, {currentDateStr}</p>
-            <p className="font-normal">Penilai {isP1 ? '1' : '2'},</p>
-            <div className="h-16" />
-            <p className="font-bold underline">{assessorName || '-'}</p>
-            <p className="font-mono text-[9.5px]">NIP. {assessorNip || '-'}</p>
-          </div>
-        </div>
+        <AlignedSignatureGrid
+          className="pt-8"
+          slots={[
+            {
+              roleLabel: `Kepala ${institution.namaLembaga || '-'},`,
+              name: principal.namaLengkap || '-',
+              idLine: `NIP. ${principal.nip || '-'}`,
+            },
+            {
+              dateLine: `${evaluators.tempatPenilaian || 'Cirebon'}, ${currentDateStr}`,
+              roleLabel: `Penilai ${isP1 ? '1' : '2'},`,
+              name: assessorName || '-',
+              idLine: `NIP. ${assessorNip || '-'}`,
+            },
+          ]}
+        />
       </div>
     );
   };
 
   const renderCombinedIdentityPage6 = () => (
-    <div className="a4-sheet bg-white p-7 md:p-8 border-[4px] border-[#008000] shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-[10.5px] text-black">
+    <div className="a4-sheet bg-white p-7 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-[10.5px] text-black">
       <div className="text-center border-b-2 border-[#008000] pb-2">
         <h2 className="text-xs font-black uppercase tracking-wide text-black">
           IDENTITAS PENILAI DAN KEPALA RAUDHATUL ATHFAL YANG DINILAI
@@ -541,7 +613,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
 
       <div className="space-y-3">
         <div>
-          <p className="font-bold bg-[#e8f5e9] border border-[#008000] px-2 py-1 uppercase text-[10px]">
+          <p className="font-bold bg-white border border-black px-2 py-1 uppercase text-[10px]">
             A. Identitas Penilai
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -583,7 +655,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
         </div>
 
         <div>
-          <p className="font-bold bg-[#e8f5e9] border border-[#008000] px-2 py-1 uppercase text-[10px]">
+          <p className="font-bold bg-white border border-black px-2 py-1 uppercase text-[10px]">
             B. Identitas Kepala Raudhatul Athfal Yang Dinilai
           </p>
           <table className="w-full text-[10px] border-collapse mt-1.5">
@@ -603,7 +675,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
         </div>
       </div>
 
-      <div className="bg-[#e8f5e9] border border-[#008000] px-3 py-2 font-bold text-center text-[10.5px]">
+      <div className="bg-white border border-black px-3 py-2 font-bold text-center text-[10.5px]">
         Periode Penilaian : {institution.periodePenilaian || periodLabel || '-'}
       </div>
     </div>
@@ -632,7 +704,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
 
     return (
       <div className="a4-sheet bg-white p-5 md:p-6 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-3 text-black">
-        <div className="text-center border-b-2 border-black pb-1.5">
+        <div className="text-center border-b-2 border-[#008000] pb-1.5">
           <p className="text-[11px] font-black uppercase tracking-wide">
             INSTRUMEN PENILAIAN KINERJA KEPALA RAUDHATUL ATHFAL
           </p>
@@ -683,38 +755,38 @@ export const PrintView: React.FC<PrintViewProps> = ({
           </tbody>
         </table>
 
-        <table className="w-full text-[8px] border border-black border-collapse tabular-nums">
+        <table className="w-full text-[8px] border border-black border-collapse tabular-nums bg-white">
           <thead>
-            <tr className="bg-slate-100 font-bold border-b border-black text-center">
-              <th rowSpan={2} className="p-1 border-r border-black w-9 align-middle">No.</th>
-              <th rowSpan={2} className="p-1 border-r border-black w-28 align-middle">
+            <tr className="bg-white font-bold border-b border-black text-center">
+              <th rowSpan={2} className="p-1 border-r border-black w-9 align-middle bg-white">No.</th>
+              <th rowSpan={2} className="p-1 border-r border-black w-28 align-middle bg-white">
                 Tugas Utama / Unsur Tugas Utama
               </th>
-              <th rowSpan={2} className="p-1 border-r border-black align-middle">Indikator Kinerja</th>
-              <th rowSpan={2} className="p-1 border-r border-black w-32 align-middle">
+              <th rowSpan={2} className="p-1 border-r border-black align-middle bg-white">Indikator Kinerja</th>
+              <th rowSpan={2} className="p-1 border-r border-black w-32 align-middle bg-white">
                 Data Yang Diharapkan
               </th>
-              <th rowSpan={2} className="p-1 border-r border-black w-36 align-middle">
+              <th rowSpan={2} className="p-1 border-r border-black w-36 align-middle bg-white">
                 Bukti Hasil Kinerja
               </th>
-              <th colSpan={4} className="p-1 border-b border-black">
+              <th colSpan={4} className="p-1 border-b border-black bg-white">
                 Hasil Kinerja*
               </th>
             </tr>
-            <tr className="bg-slate-100 font-bold border-b border-black text-center">
-              <th className="p-0.5 border-r border-black w-5">1</th>
-              <th className="p-0.5 border-r border-black w-5">2</th>
-              <th className="p-0.5 border-r border-black w-5">3</th>
-              <th className="p-0.5 w-5">4</th>
+            <tr className="bg-white font-bold border-b border-black text-center">
+              <th className="p-0.5 border-r border-black w-5 bg-white">1</th>
+              <th className="p-0.5 border-r border-black w-5 bg-white">2</th>
+              <th className="p-0.5 border-r border-black w-5 bg-white">3</th>
+              <th className="p-0.5 w-5 bg-white">4</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white">
             {compBuckets.map((bucket) => {
               let lastSubCode = '';
               return (
                 <React.Fragment key={bucket.nomor}>
-                  <tr className="bg-slate-200 font-black border-y border-black">
-                    <td colSpan={9} className="p-1.5 uppercase tracking-wide">
+                  <tr className="bg-white font-black border-y border-black">
+                    <td colSpan={9} className="p-1.5 uppercase tracking-wide bg-white">
                       {bucket.nomor}. {bucket.nama}
                     </td>
                   </tr>
@@ -723,7 +795,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
                     lastSubCode = ind.subKomponenKode;
                     const scored = scoreMap[ind.id]?.score;
                     return (
-                      <tr key={ind.id} className="border-b border-slate-400 align-top">
+                      <tr key={ind.id} className="border-b border-black align-top bg-white">
                         <td className="p-1 text-center font-mono font-bold border-r border-black">
                           {isNewSub ? ind.subKomponenKode : ''}
                         </td>
@@ -734,7 +806,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
                           <span className="font-semibold mr-1">{ind.indikatorNomor}</span>
                           {ind.indikatorNama}
                         </td>
-                        <td className="p-1 border-r border-black leading-snug text-slate-800">
+                        <td className="p-1 border-r border-black leading-snug text-black">
                           {ind.dataDiharapkan}
                         </td>
                         <td className="p-1 border-r border-black leading-snug">
@@ -747,9 +819,9 @@ export const PrintView: React.FC<PrintViewProps> = ({
                         {[1, 2, 3, 4].map((col) => (
                           <td
                             key={col}
-                            className={`p-1 text-center font-black align-middle ${
+                            className={`p-1 text-center font-black align-middle bg-white text-black ${
                               col < 4 ? 'border-r border-black' : ''
-                            } ${scored === col ? 'bg-emerald-50 text-black' : ''}`}
+                            }`}
                           >
                             {scored === col ? 'V' : ''}
                           </td>
@@ -758,7 +830,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
                     );
                   })}
                   {bucket.compSummary && (
-                    <tr className="bg-slate-50 font-bold border-b border-black">
+                    <tr className="bg-white font-bold border-b border-black">
                       <td colSpan={5} className="p-1 text-right border-r border-black">
                         Sub-Jumlah Komponen {bucket.nomor} ({bucket.compSummary.scoredCount}/
                         {bucket.compSummary.indicatorCount} butir)
@@ -771,7 +843,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 </React.Fragment>
               );
             })}
-            <tr className="bg-[#e8f5e9] font-black border-t-2 border-black">
+            <tr className="bg-white font-black border-t-2 border-black">
               <td colSpan={5} className="p-1.5 text-right border-r border-black uppercase">
                 Jumlah Skor Total Penilai {isP1 ? '1' : '2'} (Maks. {summary.maxSkorTotal}) · Nilai Kinerja
               </td>
@@ -782,29 +854,30 @@ export const PrintView: React.FC<PrintViewProps> = ({
           </tbody>
         </table>
 
-        <div className="pt-3 grid grid-cols-2 gap-8 text-center text-[10px] avoid-break">
-          <div>
-            <p>Kepala RA Yang Dinilai,</p>
-            <div className="h-12" />
-            <p className="font-bold underline">{principal.namaLengkap || '-'}</p>
-            <p className="font-mono text-[9px]">
-              NIP/NUPTK. {principal.nip && principal.nip !== '-' ? principal.nip : principal.nuptk || '-'}
-            </p>
-          </div>
-          <div>
-            <p>{evaluators.tempatPenilaian || '-'}, {currentDateStr}</p>
-            <p>Penilai {isP1 ? '1' : '2'},</p>
-            <div className="h-12" />
-            <p className="font-bold underline">{assessorName || '-'}</p>
-            <p className="font-mono text-[9px]">NIP. {assessorNip || '-'}</p>
-          </div>
-        </div>
+        <AlignedSignatureGrid
+          className="pt-4"
+          spaceHeightClass="h-12"
+          textSizeClass="text-[10px]"
+          slots={[
+            {
+              roleLabel: 'Kepala RA Yang Dinilai,',
+              name: principal.namaLengkap || '-',
+              idLine: `NIP/NUPTK. ${principal.nip && principal.nip !== '-' ? principal.nip : principal.nuptk || '-'}`,
+            },
+            {
+              dateLine: `${evaluators.tempatPenilaian || '-'}, ${currentDateStr}`,
+              roleLabel: `Penilai ${isP1 ? '1' : '2'},`,
+              name: assessorName || '-',
+              idLine: `NIP. ${assessorNip || '-'}`,
+            },
+          ]}
+        />
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 py-6 font-sans">
+    <div className="print-root-canvas min-h-screen bg-slate-100 py-6 font-sans print:bg-white print:py-0">
       {/* ============================================================== */}
       {/* TOOLBAR AKSES CEPAT & MENU TAB CETAK (NO-PRINT)                */}
       {/* ============================================================== */}
@@ -982,12 +1055,12 @@ export const PrintView: React.FC<PrintViewProps> = ({
               {(institution.fotoMadrasahUrl || principal.fotoUrl) && (
                 <div className="my-2 flex items-center justify-center gap-4">
                   {institution.fotoMadrasahUrl && (
-                    <div className="w-44 h-28 border border-slate-400 overflow-hidden bg-slate-50 p-0.5 shadow-xs flex items-center justify-center">
+                    <div className="w-44 h-28 border border-slate-400 overflow-hidden bg-white p-0.5 flex items-center justify-center">
                       <img src={institution.fotoMadrasahUrl} alt="Gedung Lembaga" className="max-h-full max-w-full object-contain" />
                     </div>
                   )}
                   {principal.fotoUrl && (
-                    <div className="w-24 h-28 border border-slate-400 overflow-hidden bg-slate-50 p-0.5 shadow-xs flex items-center justify-center">
+                    <div className="w-24 h-28 border border-slate-400 overflow-hidden bg-white p-0.5 flex items-center justify-center">
                       <img src={principal.fotoUrl} alt={principal.namaLengkap} className="max-h-full max-w-full object-contain" />
                     </div>
                   )}
@@ -1012,11 +1085,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* HALAMAN 1: COVER BINGKAI HIJAU (LAMPIRAN PDF HAL. 1)           */}
+        {/* HALAMAN 1: COVER PUTIH BERSIH (LAMPIRAN PDF HAL. 1)            */}
         {/* ============================================================== */}
         {showSection('format1_cover_excel') && (
-          <div className="cover-sheet a4-sheet bg-white p-5 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm]">
-            <div className="border-[6px] border-[#008000] p-8 h-full min-h-[258mm] flex flex-col justify-between text-center bg-white">
+          <div className="cover-sheet a4-sheet bg-white p-5 md:p-7 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm]">
+            <div className="p-4 sm:p-6 min-h-[240mm] print:min-h-[242mm] flex flex-col justify-between text-center bg-white">
               <div className="space-y-2 pt-2">
                 <h1 className="text-lg sm:text-xl font-black uppercase tracking-wide text-black leading-snug">
                   PENILAIAN KINERJA
@@ -1028,8 +1101,8 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 </p>
               </div>
 
-              <div className="py-4 flex justify-center">
-                <img src={logoKemenag} alt="Logo Kemenag RI" className="w-32 h-32 object-contain" />
+              <div className="py-3 flex justify-center">
+                <img src={logoKemenag} alt="Logo Kemenag RI" className="w-36 h-36 object-contain" />
               </div>
 
               <div className="mx-auto w-full max-w-[460px] text-left text-xs text-black">
@@ -1081,17 +1154,17 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 </table>
               </div>
 
-              <div className="pt-4 pb-2 space-y-0.5 text-center text-black border-t border-slate-200">
+              <div className="pt-4 pb-1 space-y-0.5 text-center text-black">
                 <p className="text-xs font-black uppercase tracking-wider">
                   KEMENTERIAN AGAMA REPUBLIK INDONESIA
                 </p>
                 <p className="text-xs font-black uppercase tracking-wider">
-                  KANTOR {(institution.kotaKab || 'KABUPATEN CIREBON').toUpperCase()}
+                  KANTOR KEMENTERIAN AGAMA {(institution.kotaKab || 'KABUPATEN CIREBON').toUpperCase()}
                 </p>
-                <p className="text-[10px] text-slate-800 pt-0.5">
+                <p className="text-[10px] text-black pt-0.5">
                   Jalan Sunan Drajat No. 5 Komplek Perkantoran Sumber Cirebon – 45611
                 </p>
-                <p className="text-[10px] text-slate-800 font-mono">
+                <p className="text-[10px] text-black font-mono">
                   e-mail : cirebon@kemenag.go.id , website : cirebon.kemenag.go.id
                 </p>
               </div>
@@ -1112,102 +1185,102 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 </h2>
               </div>
 
-              <table className="w-full text-[11px] border border-black border-collapse">
-                <tbody className="divide-y divide-slate-400">
+              <table className="w-full text-[11px] border border-black border-collapse bg-white">
+                <tbody className="divide-y divide-black">
                   <tr>
-                    <td className="p-2 w-8 text-center font-mono border-r border-slate-400">1</td>
-                    <td className="p-2 w-60 font-semibold bg-[#f4faf4] border-r border-slate-400">Nama Kepala RA</td>
-                    <td className="p-2 font-bold">{principal.namaLengkap || '-'}</td>
+                    <td className="p-2 w-8 text-center font-mono border-r border-black bg-white">1</td>
+                    <td className="p-2 w-60 font-semibold bg-white border-r border-black">Nama Kepala RA</td>
+                    <td className="p-2 font-bold bg-white">{principal.namaLengkap || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">2</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">NIP / No. Seri Karpeg</td>
-                    <td className="p-2 font-mono">{principal.nip || '-'} / {principal.noSeriKarpeg || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">2</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">NIP / No. Seri Karpeg</td>
+                    <td className="p-2 font-mono bg-white">{principal.nip || '-'} / {principal.noSeriKarpeg || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">3</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Tempat / Tanggal Lahir</td>
-                    <td className="p-2">{principal.tempatTanggalLahir || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">3</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Tempat / Tanggal Lahir</td>
+                    <td className="p-2 bg-white">{principal.tempatTanggalLahir || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">4</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Pangkat / Golongan Ruang</td>
-                    <td className="p-2">{principal.pangkatGol || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">4</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Pangkat / Golongan Ruang</td>
+                    <td className="p-2 bg-white">{principal.pangkatGol || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">5</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">TMT Sebagai Kepala RA</td>
-                    <td className="p-2">{principal.tmtJabatan || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">5</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">TMT Sebagai Kepala RA</td>
+                    <td className="p-2 bg-white">{principal.tmtJabatan || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">6</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Masa Kerja Sebagai Kepala RA</td>
-                    <td className="p-2">{principal.masaKerjaTahun || '0'} Tahun {principal.masaKerjaBulan || '0'} Bulan</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">6</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Masa Kerja Sebagai Kepala RA</td>
+                    <td className="p-2 bg-white">{principal.masaKerjaTahun || '0'} Tahun {principal.masaKerjaBulan || '0'} Bulan</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">7</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">NUPTK / PegID / NRG</td>
-                    <td className="p-2 font-mono">{principal.nuptk || '-'} / {principal.nrg || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">7</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">NUPTK / PegID / NRG</td>
+                    <td className="p-2 font-mono bg-white">{principal.nuptk || '-'} / {principal.nrg || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">8</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Jenis Kelamin</td>
-                    <td className="p-2">{principal.jenisKelamin || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">8</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Jenis Kelamin</td>
+                    <td className="p-2 bg-white">{principal.jenisKelamin || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">9</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Pendidikan Terakhir / Spesialisasi</td>
-                    <td className="p-2">{principal.pendidikanTerakhir || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">9</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Pendidikan Terakhir / Spesialisasi</td>
+                    <td className="p-2 bg-white">{principal.pendidikanTerakhir || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">10</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Program Keahlian / Jabatan</td>
-                    <td className="p-2">{principal.programKeahlian || principal.jabatan || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">10</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Program Keahlian / Jabatan</td>
+                    <td className="p-2 bg-white">{principal.programKeahlian || principal.jabatan || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">11</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Nama Raudhatul Athfal (RA)</td>
-                    <td className="p-2 font-bold">{institution.namaLembaga || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">11</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Nama Raudhatul Athfal (RA)</td>
+                    <td className="p-2 font-bold bg-white">{institution.namaLembaga || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">12</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Alamat Lengkap RA</td>
-                    <td className="p-2">{institution.alamat || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">12</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Alamat Lengkap RA</td>
+                    <td className="p-2 bg-white">{institution.alamat || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">13</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Telp / Fax</td>
-                    <td className="p-2 font-mono">{institution.telpFax || institution.telepon || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">13</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Telp / Fax</td>
+                    <td className="p-2 font-mono bg-white">{institution.telpFax || institution.telepon || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">14</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Desa / Kelurahan</td>
-                    <td className="p-2">{institution.desaKelurahan || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">14</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Desa / Kelurahan</td>
+                    <td className="p-2 bg-white">{institution.desaKelurahan || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">15</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Kecamatan</td>
-                    <td className="p-2">{institution.kecamatan || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">15</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Kecamatan</td>
+                    <td className="p-2 bg-white">{institution.kecamatan || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">16</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Kabupaten / Kota</td>
-                    <td className="p-2">{institution.kotaKab || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">16</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Kabupaten / Kota</td>
+                    <td className="p-2 bg-white">{institution.kotaKab || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">17</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Provinsi</td>
-                    <td className="p-2">{institution.provinsi || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">17</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Provinsi</td>
+                    <td className="p-2 bg-white">{institution.provinsi || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">18</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Unit Kerja</td>
-                    <td className="p-2">{principal.unitKerja || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">18</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Unit Kerja</td>
+                    <td className="p-2 bg-white">{principal.unitKerja || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-2 text-center font-mono border-r border-slate-400">19</td>
-                    <td className="p-2 font-semibold bg-[#f4faf4] border-r border-slate-400">Periode Penilaian</td>
-                    <td className="p-2 font-semibold">{institution.periodePenilaian || periodLabel || '-'}</td>
+                    <td className="p-2 text-center font-mono border-r border-black bg-white">19</td>
+                    <td className="p-2 font-semibold bg-white border-r border-black">Periode Penilaian</td>
+                    <td className="p-2 font-semibold bg-white">{institution.periodePenilaian || periodLabel || '-'}</td>
                   </tr>
                 </tbody>
               </table>
@@ -1223,46 +1296,46 @@ export const PrintView: React.FC<PrintViewProps> = ({
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-bold uppercase text-xs bg-[#e8f5e9] border border-black px-2.5 py-1.5">
+                  <h3 className="font-bold uppercase text-xs bg-white border border-black px-2.5 py-1.5">
                     A. Penilai 1
                   </h3>
-                  <table className="w-full text-[11px] border border-t-0 border-black border-collapse">
-                    <tbody className="divide-y divide-slate-400">
-                      <tr><td className="p-2 w-56 font-semibold bg-slate-50 border-r border-slate-400">1. Nama</td><td className="p-2 font-bold">{evaluators.pengawas1Nama || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">2. NIP</td><td className="p-2 font-mono">{evaluators.pengawas1Nip || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">3. Pangkat / Golongan / Ruang</td><td className="p-2">{evaluators.pengawas1PangkatGol || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">4. Jabatan</td><td className="p-2">{evaluators.pengawas1Jabatan || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">5. Unit Kerja</td><td className="p-2">{evaluators.pengawas1UnitKerja || '-'}</td></tr>
+                  <table className="w-full text-[11px] border border-t-0 border-black border-collapse bg-white">
+                    <tbody className="divide-y divide-black">
+                      <tr><td className="p-2 w-56 font-semibold bg-white border-r border-black">1. Nama</td><td className="p-2 font-bold bg-white">{evaluators.pengawas1Nama || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">2. NIP</td><td className="p-2 font-mono bg-white">{evaluators.pengawas1Nip || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">3. Pangkat / Golongan / Ruang</td><td className="p-2 bg-white">{evaluators.pengawas1PangkatGol || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">4. Jabatan</td><td className="p-2 bg-white">{evaluators.pengawas1Jabatan || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">5. Unit Kerja</td><td className="p-2 bg-white">{evaluators.pengawas1UnitKerja || '-'}</td></tr>
                     </tbody>
                   </table>
                 </div>
 
                 <div>
-                  <h3 className="font-bold uppercase text-xs bg-[#e8f5e9] border border-black px-2.5 py-1.5">
+                  <h3 className="font-bold uppercase text-xs bg-white border border-black px-2.5 py-1.5">
                     B. Penilai 2
                   </h3>
-                  <table className="w-full text-[11px] border border-t-0 border-black border-collapse">
-                    <tbody className="divide-y divide-slate-400">
-                      <tr><td className="p-2 w-56 font-semibold bg-slate-50 border-r border-slate-400">1. Nama</td><td className="p-2 font-bold">{evaluators.pengawas2Nama || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">2. NIP</td><td className="p-2 font-mono">{evaluators.pengawas2Nip || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">3. Pangkat / Golongan / Ruang</td><td className="p-2">{evaluators.pengawas2PangkatGol || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">4. Jabatan</td><td className="p-2">{evaluators.pengawas2Jabatan || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">5. Unit Kerja</td><td className="p-2">{evaluators.pengawas2UnitKerja || '-'}</td></tr>
+                  <table className="w-full text-[11px] border border-t-0 border-black border-collapse bg-white">
+                    <tbody className="divide-y divide-black">
+                      <tr><td className="p-2 w-56 font-semibold bg-white border-r border-black">1. Nama</td><td className="p-2 font-bold bg-white">{evaluators.pengawas2Nama || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">2. NIP</td><td className="p-2 font-mono bg-white">{evaluators.pengawas2Nip || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">3. Pangkat / Golongan / Ruang</td><td className="p-2 bg-white">{evaluators.pengawas2PangkatGol || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">4. Jabatan</td><td className="p-2 bg-white">{evaluators.pengawas2Jabatan || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">5. Unit Kerja</td><td className="p-2 bg-white">{evaluators.pengawas2UnitKerja || '-'}</td></tr>
                     </tbody>
                   </table>
                 </div>
 
                 <div>
-                  <h3 className="font-bold uppercase text-xs bg-[#e8f5e9] border border-black px-2.5 py-1.5">
+                  <h3 className="font-bold uppercase text-xs bg-white border border-black px-2.5 py-1.5">
                     C. SK Penugasan &amp; Waktu Penilaian
                   </h3>
-                  <table className="w-full text-[11px] border border-t-0 border-black border-collapse">
-                    <tbody className="divide-y divide-slate-400">
-                      <tr><td className="p-2 w-56 font-semibold bg-slate-50 border-r border-slate-400">1. Nomor SK Penugasan</td><td className="p-2 font-mono font-bold">{evaluators.skPenugasanNomor || adminDocs.suratTugasNomor || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">2. Tanggal Surat Tugas</td><td className="p-2">{evaluators.skPenugasanTanggal || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">3. Berlaku Sampai Dengan</td><td className="p-2">{evaluators.skPenugasanBerlakuSampai || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">4. Tempat Penilaian</td><td className="p-2">{evaluators.tempatPenilaian || '-'}</td></tr>
-                      <tr><td className="p-2 font-semibold bg-slate-50 border-r border-slate-400">5. Tanggal Penilaian</td><td className="p-2 font-semibold">{evaluators.tanggalPenilaian || '-'}</td></tr>
+                  <table className="w-full text-[11px] border border-t-0 border-black border-collapse bg-white">
+                    <tbody className="divide-y divide-black">
+                      <tr><td className="p-2 w-56 font-semibold bg-white border-r border-black">1. Nomor SK Penugasan</td><td className="p-2 font-mono font-bold bg-white">{evaluators.skPenugasanNomor || adminDocs.suratTugasNomor || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">2. Tanggal Surat Tugas</td><td className="p-2 bg-white">{evaluators.skPenugasanTanggal || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">3. Berlaku Sampai Dengan</td><td className="p-2 bg-white">{evaluators.skPenugasanBerlakuSampai || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">4. Tempat Penilaian</td><td className="p-2 bg-white">{evaluators.tempatPenilaian || '-'}</td></tr>
+                      <tr><td className="p-2 font-semibold bg-white border-r border-black">5. Tanggal Penilaian</td><td className="p-2 font-semibold bg-white">{evaluators.tanggalPenilaian || '-'}</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -1296,32 +1369,32 @@ export const PrintView: React.FC<PrintViewProps> = ({
           <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
             <KopSuratDinas variant="kemenag" />
 
-            <div className="text-center">
-              <p className="text-[10px] font-bold uppercase text-emerald-900">FORMAT 3 · DAFTAR PERIKSA KELENGKAPAN BERKAS</p>
-              <h2 className="text-sm font-black uppercase underline underline-offset-4">
+            <div className="text-center pb-2 border-b-2 border-[#008000]">
+              <p className="text-[10px] font-bold uppercase text-black">FORMAT 3 · DAFTAR PERIKSA KELENGKAPAN BERKAS</p>
+              <h2 className="text-sm font-black uppercase text-black">
                 PEMERIKSAAN KELENGKAPAN DATA &amp; PORTOFOLIO PKKRA
               </h2>
-              <p className="text-[10.5px] font-semibold text-slate-700">
+              <p className="text-[10.5px] font-semibold text-black">
                 {institution.namaLembaga} · {periodLabel || institution.periodePenilaian}
               </p>
             </div>
 
-            <table className="w-full text-[10.5px] border border-slate-400 border-collapse tabular-nums">
+            <table className="w-full text-[10.5px] border border-black border-collapse tabular-nums bg-white">
               <thead>
-                <tr className="bg-slate-100 font-bold border-b border-slate-400">
-                  <th className="p-1.5 text-center border-r border-slate-400 w-10">No</th>
-                  <th className="p-1.5 text-left border-r border-slate-400">Sektor Data &amp; Dokumen PKKM</th>
-                  <th className="p-1.5 text-left border-r border-slate-400 w-44">Ringkasan Data</th>
-                  <th className="p-1.5 text-center w-28">Status</th>
+                <tr className="bg-white font-bold border-b border-black">
+                  <th className="p-1.5 text-center border-r border-black w-10 bg-white">No</th>
+                  <th className="p-1.5 text-left border-r border-black bg-white">Sektor Data &amp; Dokumen PKKM</th>
+                  <th className="p-1.5 text-left border-r border-black w-44 bg-white">Ringkasan Data</th>
+                  <th className="p-1.5 text-center w-28 bg-white">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-300">
+              <tbody className="divide-y divide-black">
                 {checklist12.map((row) => (
                   <tr key={row.no}>
-                    <td className="p-1.5 text-center border-r border-slate-300 font-mono">{row.no}</td>
-                    <td className="p-1.5 border-r border-slate-300 font-semibold">{row.sektor}</td>
-                    <td className="p-1.5 border-r border-slate-300 font-mono text-[10px]">{row.ket}</td>
-                    <td className={`p-1.5 text-center font-bold ${row.ok ? 'text-emerald-900' : 'text-amber-800'}`}>
+                    <td className="p-1.5 text-center border-r border-black font-mono bg-white">{row.no}</td>
+                    <td className="p-1.5 border-r border-black font-semibold bg-white">{row.sektor}</td>
+                    <td className="p-1.5 border-r border-black font-mono text-[10px] bg-white">{row.ket}</td>
+                    <td className="p-1.5 text-center font-bold bg-white text-black">
                       {row.ok ? 'LENGKAP' : 'BELUM LENGKAP'}
                     </td>
                   </tr>
@@ -1329,7 +1402,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
               </tbody>
             </table>
 
-            <div className="border border-slate-300 p-3 bg-slate-50 text-[11px] flex justify-between items-center">
+            <div className="border border-black p-3 bg-white text-[11px] flex justify-between items-center">
               <span>Total Sektor Siap:</span>
               <strong className="font-mono">
                 {checklist12.filter((c) => c.ok).length} / {checklist12.length} Sektor Lengkap
@@ -1341,29 +1414,29 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 <h3 className="text-xs font-bold uppercase text-black">
                   Daftar Ceklis 27 Berkas Administrasi Wajib Dikumpulkan
                 </h3>
-                <span className="font-mono text-[10px] font-bold text-emerald-900">
+                <span className="font-mono text-[10px] font-bold text-black">
                   {generatedDocs.filter((d) => d.status === 'APPROVED').length} / {DOCUMENT_TEMPLATES.length} Terkumpul
                 </span>
               </div>
-              <table className="w-full text-[9.5px] border border-slate-400 border-collapse tabular-nums">
+              <table className="w-full text-[9.5px] border border-black border-collapse tabular-nums bg-white">
                 <thead>
-                  <tr className="bg-slate-100 font-bold border-b border-slate-400">
-                    <th className="p-1 w-7 text-center border-r border-slate-400">No</th>
-                    <th className="p-1 text-left border-r border-slate-400">Nama Berkas / Dokumen PKKRA</th>
-                    <th className="p-1 w-24 text-center border-r border-slate-400">Komponen</th>
-                    <th className="p-1 w-24 text-center">Status Ceklis</th>
+                  <tr className="bg-white font-bold border-b border-black">
+                    <th className="p-1 w-7 text-center border-r border-black bg-white">No</th>
+                    <th className="p-1 text-left border-r border-black bg-white">Nama Berkas / Dokumen PKKRA</th>
+                    <th className="p-1 w-24 text-center border-r border-black bg-white">Komponen</th>
+                    <th className="p-1 w-24 text-center bg-white">Status Ceklis</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-300">
+                <tbody className="divide-y divide-black">
                   {DOCUMENT_TEMPLATES.map((tpl, idx) => {
                     const matched = generatedDocs.find((d) => d.templateId === tpl.templateId);
                     const isCollected = matched?.status === 'APPROVED';
                     return (
                       <tr key={tpl.templateId}>
-                        <td className="p-1 text-center font-mono border-r border-slate-300">{idx + 1}</td>
-                        <td className="p-1 border-r border-slate-300 font-medium">{tpl.title}</td>
-                        <td className="p-1 text-center font-mono border-r border-slate-300">{tpl.relatedKomponen}</td>
-                        <td className={`p-1 text-center font-bold ${isCollected ? 'text-emerald-900' : 'text-amber-800'}`}>
+                        <td className="p-1 text-center font-mono border-r border-black bg-white">{idx + 1}</td>
+                        <td className="p-1 border-r border-black font-medium bg-white">{tpl.title}</td>
+                        <td className="p-1 text-center font-mono border-r border-black bg-white">{tpl.relatedKomponen}</td>
+                        <td className="p-1 text-center font-bold bg-white text-black">
                           {isCollected ? '[✓] TERKUMPUL' : '[ ] DRAFT'}
                         </td>
                       </tr>
@@ -1379,11 +1452,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
         {/* 2. LEMBAR PENGESAHAN RESMI KEMENAG                             */}
         {/* ============================================================== */}
         {showSection('cover_pengesahan') && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4">
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-black">
             <KopSuratDinas variant="kemenag" />
 
-            <div className="text-center my-2">
-              <h3 className="text-sm font-black uppercase underline underline-offset-4 text-black tracking-wide">
+            <div className="text-center my-2 pb-2 border-b-2 border-[#008000]">
+              <h3 className="text-sm font-black uppercase text-black tracking-wide">
                 LEMBAR PENGESAHAN LAPORAN PKKRA / PKKM
               </h3>
               <p className="text-[11px] font-semibold text-black mt-0.5 uppercase">
@@ -1395,43 +1468,43 @@ export const PrintView: React.FC<PrintViewProps> = ({
               Setelah dilakukan pemeriksaan kelengkapan administrasi, verifikasi bukti fisik portofolio Komponen 1–4, serta klarifikasi lapangan oleh Tim Penilai Pengawas Pembina Kantor Kementerian Agama {institution.kotaKab || '-'}, maka Laporan Penilaian Kinerja Kepala Raudhatul Athfal (PKKRA) dari satuan pendidikan:
             </p>
 
-            <table className="w-full text-xs border border-slate-400 border-collapse">
-              <tbody className="divide-y divide-slate-300">
+            <table className="w-full text-xs border border-black border-collapse bg-white">
+              <tbody className="divide-y divide-black">
                 <tr>
-                  <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300 w-48">Nama Satuan Pendidikan</td>
-                  <td className="p-1.5 font-bold text-black">{institution.namaLembaga}</td>
+                  <td className="p-1.5 font-semibold bg-white border-r border-black w-48">Nama Satuan Pendidikan</td>
+                  <td className="p-1.5 font-bold text-black bg-white">{institution.namaLembaga}</td>
                 </tr>
                 <tr>
-                  <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Penyelenggara / Yayasan</td>
-                  <td className="p-1.5 font-semibold text-black">{adminDocs.namaYayasan || '-'}</td>
+                  <td className="p-1.5 font-semibold bg-white border-r border-black">Penyelenggara / Yayasan</td>
+                  <td className="p-1.5 font-semibold text-black bg-white">{adminDocs.namaYayasan || '-'}</td>
                 </tr>
                 <tr>
-                  <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">NSM / NPSN</td>
-                  <td className="p-1.5 font-mono">{institution.nsm || '-'} / {institution.npsn || institution.npsm || '-'}</td>
+                  <td className="p-1.5 font-semibold bg-white border-r border-black">NSM / NPSN</td>
+                  <td className="p-1.5 font-mono bg-white">{institution.nsm || '-'} / {institution.npsn || institution.npsm || '-'}</td>
                 </tr>
                 <tr>
-                  <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">SK Izin Operasional (IJOP)</td>
-                  <td className="p-1.5 font-mono">{adminDocs.izinOperasionalNomor || '-'}</td>
+                  <td className="p-1.5 font-semibold bg-white border-r border-black">SK Izin Operasional (IJOP)</td>
+                  <td className="p-1.5 font-mono bg-white">{adminDocs.izinOperasionalNomor || '-'}</td>
                 </tr>
                 <tr>
-                  <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Status Akreditasi BAN-PDM</td>
-                  <td className="p-1.5 font-semibold">{institution.accreditationDetail?.peringkat || institution.akreditasi || '-'} (SK: {institution.accreditationDetail?.nomorSk || '-'})</td>
+                  <td className="p-1.5 font-semibold bg-white border-r border-black">Status Akreditasi BAN-PDM</td>
+                  <td className="p-1.5 font-semibold bg-white">{institution.accreditationDetail?.peringkat || institution.akreditasi || '-'} (SK: {institution.accreditationDetail?.nomorSk || '-'})</td>
                 </tr>
                 <tr>
-                  <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Alamat Lembaga</td>
-                  <td className="p-1.5">{institution.alamat || '-'}, Kec. {institution.kecamatan || '-'}, {institution.kotaKab || '-'}, {institution.provinsi || '-'}</td>
+                  <td className="p-1.5 font-semibold bg-white border-r border-black">Alamat Lembaga</td>
+                  <td className="p-1.5 bg-white">{institution.alamat || '-'}, Kec. {institution.kecamatan || '-'}, {institution.kotaKab || '-'}, {institution.provinsi || '-'}</td>
                 </tr>
                 <tr>
-                  <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Nama Kepala RA</td>
-                  <td className="p-1.5 font-bold text-emerald-950">{principal.namaLengkap || '-'}</td>
+                  <td className="p-1.5 font-semibold bg-white border-r border-black">Nama Kepala RA</td>
+                  <td className="p-1.5 font-bold text-black bg-white">{principal.namaLengkap || '-'}</td>
                 </tr>
                 <tr>
-                  <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">NIP / NUPTK / NPK</td>
-                  <td className="p-1.5 font-mono">{principal.nip || '-'} / {principal.nuptk || '-'} / {principal.npk || '-'}</td>
+                  <td className="p-1.5 font-semibold bg-white border-r border-black">NIP / NUPTK / NPK</td>
+                  <td className="p-1.5 font-mono bg-white">{principal.nip || '-'} / {principal.nuptk || '-'} / {principal.npk || '-'}</td>
                 </tr>
                 <tr>
-                  <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Periode Penilaian</td>
-                  <td className="p-1.5 font-medium">{institution.periodePenilaian || periodLabel || '-'}</td>
+                  <td className="p-1.5 font-semibold bg-white border-r border-black">Periode Penilaian</td>
+                  <td className="p-1.5 font-medium bg-white">{institution.periodePenilaian || periodLabel || '-'}</td>
                 </tr>
               </tbody>
             </table>
@@ -1440,8 +1513,8 @@ export const PrintView: React.FC<PrintViewProps> = ({
               Dinyatakan telah memenuhi syarat kelengkapan berkas dan <strong>disahkan</strong> sebagai dokumen pertanggungjawaban kinerja kepala satuan pendidikan untuk periode penilaian Tahun {new Date().getFullYear()}.
             </p>
 
-            <div className="border border-slate-400 p-2.5 bg-white text-[10.5px] avoid-break">
-              <p className="font-bold uppercase text-black mb-1 border-b border-slate-300 pb-0.5">
+            <div className="border border-black p-2.5 bg-white text-[10.5px] avoid-break">
+              <p className="font-bold uppercase text-black mb-1 border-b border-black pb-0.5">
                 LEMBAR VERIFIKASI TIM PENILAI PENGAWAS PEMBINA:
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -1450,40 +1523,43 @@ export const PrintView: React.FC<PrintViewProps> = ({
               </div>
             </div>
 
-            <div className="pt-2 text-xs text-black avoid-break">
-              <div className="text-right mb-3">
-                <p>{evaluators.tempatPenilaian || '-'}, {currentDateStr}</p>
-              </div>
+            <div className="pt-2 space-y-5 avoid-break">
+              <AlignedSignatureGrid
+                textSizeClass="text-xs"
+                spaceHeightClass="h-14"
+                slots={[
+                  {
+                    roleLabel: 'Pengawas Pembina / Penilai 1,',
+                    name: evaluators.pengawas1Nama || '-',
+                    idLine: `NIP. ${evaluators.pengawas1Nip || '-'}`,
+                  },
+                  {
+                    dateLine: `${evaluators.tempatPenilaian || '-'}, ${currentDateStr}`,
+                    roleLabel: `Kepala ${institution.namaLembaga},`,
+                    name: principal.namaLengkap || '-',
+                    idLine: `NIP/NUPTK. ${principal.nip && principal.nip !== '-' ? principal.nip : principal.nuptk || '-'}`,
+                  },
+                ]}
+              />
 
-              <div className="grid grid-cols-2 gap-6 text-center mb-5">
-                <div>
-                  <p className="font-semibold">Pengawas Pembina / Penilai 1,</p>
-                  <div className="h-14" />
-                  <p className="font-bold underline">{evaluators.pengawas1Nama || '-'}</p>
-                  <p className="font-mono text-[10px]">NIP. {evaluators.pengawas1Nip || '-'}</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Kepala {institution.namaLembaga},</p>
-                  <div className="h-14" />
-                  <p className="font-bold underline">{principal.namaLengkap || '-'}</p>
-                  <p className="font-mono text-[10px]">NIP/NUPTK. {principal.nip && principal.nip !== '-' ? principal.nip : principal.nuptk || '-'}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6 text-center border-t border-slate-300 pt-3">
-                <div>
-                  <p className="font-semibold">Mengetahui,</p>
-                  <p className="font-semibold">Ketua Komite / Penyelenggara RA,</p>
-                  <div className="h-14" />
-                  <p className="font-bold underline">{evaluators.komiteNama || '-'}</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Mengesahkan,</p>
-                  <p className="font-semibold">Kepala Seksi Pendidikan Madrasah,</p>
-                  <div className="h-14" />
-                  <p className="font-bold underline">{evaluators.kasiPenmadNama || '-'}</p>
-                  <p className="font-mono text-[10px]">NIP. {evaluators.kasiPenmadNip || '-'}</p>
-                </div>
+              <div className="border-t border-black pt-3">
+                <AlignedSignatureGrid
+                  textSizeClass="text-xs"
+                  spaceHeightClass="h-14"
+                  slots={[
+                    {
+                      topLabel: 'Mengetahui,',
+                      roleLabel: 'Ketua Komite / Penyelenggara RA,',
+                      name: evaluators.komiteNama || '-',
+                    },
+                    {
+                      topLabel: 'Mengesahkan,',
+                      roleLabel: 'Kepala Seksi Pendidikan Madrasah,',
+                      name: evaluators.kasiPenmadNama || '-',
+                      idLine: `NIP. ${evaluators.kasiPenmadNip || '-'}`,
+                    },
+                  ]}
+                />
               </div>
             </div>
           </div>
@@ -1497,11 +1573,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
             <div className="space-y-4">
               <KopSuratDinas variant="yayasan" />
 
-              <div className="text-center my-4">
-                <h2 className="text-sm font-black uppercase underline underline-offset-4 tracking-wide">
+              <div className="text-center my-4 pb-2 border-b-2 border-[#008000]">
+                <h2 className="text-sm font-black uppercase tracking-wide text-black">
                   SURAT PERNYATAAN KEABSAHAN DATA DAN DOKUMEN
                 </h2>
-                <p className="text-xs font-mono font-semibold mt-1">
+                <p className="text-xs font-mono font-semibold mt-1 text-black">
                   Nomor: {adminDocs.suratPernyataanNomor || '-'}
                 </p>
               </div>
@@ -1560,28 +1636,26 @@ export const PrintView: React.FC<PrintViewProps> = ({
             </div>
 
             <div className="pt-8 avoid-break">
-              <div className="grid grid-cols-2 gap-8 text-center">
-                <div className="pt-4">
-                  <p className="font-semibold">Mengetahui,</p>
-                  <p className="font-semibold">Ketua Komite / Yayasan Penyelenggara,</p>
-                  <div className="h-20" />
-                  <p className="font-bold underline">{evaluators.komiteNama || '-'}</p>
-                  <p className="text-[10px] text-slate-700">{adminDocs.namaYayasan || '-'}</p>
-                </div>
-
-                <div>
-                  <p>{evaluators.tempatPenilaian || '-'}, {adminDocs.suratPernyataanTanggal || '-'}</p>
-                  <p className="font-semibold mt-1">Yang Membuat Pernyataan,</p>
-                  <p className="font-semibold">Kepala {institution.namaLembaga}</p>
-                  <div className="h-20 flex items-center justify-center">
-                    <div className="border border-dashed border-slate-500 px-3 py-1.5 text-[9px] text-slate-600 font-mono">
-                      Materai Rp 10.000
-                    </div>
-                  </div>
-                  <p className="font-bold underline">{principal.namaLengkap || '-'}</p>
-                  <p className="font-mono text-[10px]">NIP/NPK. {principal.nip && principal.nip !== '-' ? principal.nip : principal.npk || '-'}</p>
-                </div>
-              </div>
+              <AlignedSignatureGrid
+                textSizeClass="text-xs"
+                spaceHeightClass="h-20"
+                slots={[
+                  {
+                    topLabel: 'Mengetahui,',
+                    roleLabel: 'Ketua Komite / Yayasan Penyelenggara,',
+                    name: evaluators.komiteNama || '-',
+                    idLine: adminDocs.namaYayasan || '-',
+                  },
+                  {
+                    dateLine: `${evaluators.tempatPenilaian || '-'}, ${adminDocs.suratPernyataanTanggal || '-'}`,
+                    topLabel: 'Yang Membuat Pernyataan,',
+                    roleLabel: `Kepala ${institution.namaLembaga},`,
+                    spacerBadge: 'Materai Rp 10.000',
+                    name: principal.namaLengkap || '-',
+                    idLine: `NIP/NPK. ${principal.nip && principal.nip !== '-' ? principal.nip : principal.npk || '-'}`,
+                  },
+                ]}
+              />
             </div>
           </div>
         )}
@@ -1594,11 +1668,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
             <div className="space-y-4">
               <KopSuratDinas variant="kemenag" />
 
-              <div className="text-center my-3">
-                <h2 className="text-sm font-black uppercase underline underline-offset-4 tracking-widest">
+              <div className="text-center my-3 pb-2 border-b-2 border-[#008000]">
+                <h2 className="text-sm font-black uppercase tracking-widest text-black">
                   SURAT TUGAS
                 </h2>
-                <p className="text-xs font-mono font-semibold mt-1">
+                <p className="text-xs font-mono font-semibold mt-1 text-black">
                   Nomor: {adminDocs.suratTugasNomor || '-'}
                 </p>
               </div>
@@ -1629,39 +1703,39 @@ export const PrintView: React.FC<PrintViewProps> = ({
 
               <div>
                 <p className="font-bold mb-1.5">Kepada:</p>
-                <table className="w-full text-[11px] border border-slate-500 border-collapse">
+                <table className="w-full text-[11px] border border-black border-collapse bg-white">
                   <thead>
-                    <tr className="bg-slate-100 border-b border-slate-500 font-bold uppercase text-center">
-                      <th className="p-1.5 w-8 border-r border-slate-500">No</th>
-                      <th className="p-1.5 text-left border-r border-slate-500">Nama Lengkap &amp; Gelar</th>
-                      <th className="p-1.5 text-left border-r border-slate-500">NIP / Identitas</th>
-                      <th className="p-1.5 text-left">Jabatan / Peran Tugas</th>
+                    <tr className="bg-white border-b border-black font-bold uppercase text-center">
+                      <th className="p-1.5 w-8 border-r border-black bg-white">No</th>
+                      <th className="p-1.5 text-left border-r border-black bg-white">Nama Lengkap &amp; Gelar</th>
+                      <th className="p-1.5 text-left border-r border-black bg-white">NIP / Identitas</th>
+                      <th className="p-1.5 text-left bg-white">Jabatan / Peran Tugas</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-400">
+                  <tbody className="divide-y divide-black">
                     <tr>
-                      <td className="p-1.5 text-center font-mono border-r border-slate-400">1</td>
-                      <td className="p-1.5 font-bold border-r border-slate-400">{evaluators.pengawas1Nama || '-'}</td>
-                      <td className="p-1.5 font-mono border-r border-slate-400">{evaluators.pengawas1Nip || '-'}</td>
-                      <td className="p-1.5">{evaluators.pengawas1Jabatan || 'Pengawas Madrasah'} (Ketua Tim Penilai)</td>
+                      <td className="p-1.5 text-center font-mono border-r border-black bg-white">1</td>
+                      <td className="p-1.5 font-bold border-r border-black bg-white">{evaluators.pengawas1Nama || '-'}</td>
+                      <td className="p-1.5 font-mono border-r border-black bg-white">{evaluators.pengawas1Nip || '-'}</td>
+                      <td className="p-1.5 bg-white">{evaluators.pengawas1Jabatan || 'Pengawas Madrasah'} (Ketua Tim Penilai)</td>
                     </tr>
                     <tr>
-                      <td className="p-1.5 text-center font-mono border-r border-slate-400">2</td>
-                      <td className="p-1.5 font-bold border-r border-slate-400">{evaluators.pengawas2Nama || '-'}</td>
-                      <td className="p-1.5 font-mono border-r border-slate-400">{evaluators.pengawas2Nip || '-'}</td>
-                      <td className="p-1.5">{evaluators.pengawas2Jabatan || 'Pengawas Madrasah/RA'} (Anggota Tim Penilai)</td>
+                      <td className="p-1.5 text-center font-mono border-r border-black bg-white">2</td>
+                      <td className="p-1.5 font-bold border-r border-black bg-white">{evaluators.pengawas2Nama || '-'}</td>
+                      <td className="p-1.5 font-mono border-r border-black bg-white">{evaluators.pengawas2Nip || '-'}</td>
+                      <td className="p-1.5 bg-white">{evaluators.pengawas2Jabatan || 'Pengawas Madrasah/RA'} (Anggota Tim Penilai)</td>
                     </tr>
                     <tr>
-                      <td className="p-1.5 text-center font-mono border-r border-slate-400">3</td>
-                      <td className="p-1.5 font-bold border-r border-slate-400">{principal.namaLengkap || '-'}</td>
-                      <td className="p-1.5 font-mono border-r border-slate-400">{principal.nip && principal.nip !== '-' ? principal.nip : principal.npk || '-'}</td>
-                      <td className="p-1.5">Kepala {institution.namaLembaga} (Kepala RA Yang Dinilai)</td>
+                      <td className="p-1.5 text-center font-mono border-r border-black bg-white">3</td>
+                      <td className="p-1.5 font-bold border-r border-black bg-white">{principal.namaLengkap || '-'}</td>
+                      <td className="p-1.5 font-mono border-r border-black bg-white">{principal.nip && principal.nip !== '-' ? principal.nip : principal.npk || '-'}</td>
+                      <td className="p-1.5 bg-white">Kepala {institution.namaLembaga} (Kepala RA Yang Dinilai)</td>
                     </tr>
                     <tr>
-                      <td className="p-1.5 text-center font-mono border-r border-slate-400">4</td>
-                      <td className="p-1.5 font-bold border-r border-slate-400">{evaluators.komiteNama || '-'}</td>
-                      <td className="p-1.5 font-mono border-r border-slate-400">-</td>
-                      <td className="p-1.5">Ketua Komite / Unsur Masyarakat Mitra Penilaian</td>
+                      <td className="p-1.5 text-center font-mono border-r border-black bg-white">4</td>
+                      <td className="p-1.5 font-bold border-r border-black bg-white">{evaluators.komiteNama || '-'}</td>
+                      <td className="p-1.5 font-mono border-r border-black bg-white">-</td>
+                      <td className="p-1.5 bg-white">Ketua Komite / Unsur Masyarakat Mitra Penilaian</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1692,7 +1766,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
                   <p>Ditetapkan di : {evaluators.tempatPenilaian || '-'}</p>
                   <p className="mb-1">Pada Tanggal : {adminDocs.suratTugasTanggal || '-'}</p>
                   <p className="font-bold">{adminDocs.suratTugasPemberi || 'Kantor Kementerian Agama'}</p>
-                  <p className="text-[10px] text-slate-600">(a.n. Kepala Seksi Pendidikan Madrasah)</p>
+                  <p className="text-[10px] text-black">(a.n. Kepala Seksi Pendidikan Madrasah)</p>
                   <div className="h-16" />
                   <p className="font-bold underline">{evaluators.kasiPenmadNama || '-'}</p>
                   <p className="font-mono text-[10px]">NIP. {evaluators.kasiPenmadNip || '-'}</p>
@@ -1709,7 +1783,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
           <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-3 text-[11px] text-black">
             <KopSuratDinas variant="yayasan" />
 
-            <div className="text-center space-y-0.5">
+            <div className="text-center space-y-0.5 pb-2 border-b-2 border-[#008000]">
               <p className="font-bold uppercase text-xs">KEPUTUSAN KEPALA {institution.namaLembaga}</p>
               <p className="font-mono font-semibold text-xs">NOMOR: {adminDocs.skPanitiaNomor || '-'}</p>
               <p className="font-bold uppercase text-xs pt-1">TENTANG</p>
@@ -1746,39 +1820,39 @@ export const PrintView: React.FC<PrintViewProps> = ({
             </div>
 
             <div className="pt-2">
-              <h4 className="font-bold uppercase text-[10.5px] mb-1 border-b border-slate-300 pb-0.5">
+              <h4 className="font-bold uppercase text-[10.5px] mb-1 border-b border-black pb-0.5">
                 LAMPIRAN: DAFTAR PEMBAGIAN TUGAS TIM PELAKSANA PKKRA ({ptkList.length} PERSONIL)
               </h4>
-              <table className="w-full text-[9.5px] border border-slate-500 border-collapse">
+              <table className="w-full text-[9.5px] border border-black border-collapse bg-white">
                 <thead>
-                  <tr className="bg-slate-100 border-b border-slate-500 font-bold uppercase text-center">
-                    <th className="p-1 w-6 border-r border-slate-500">No</th>
-                    <th className="p-1 text-left border-r border-slate-500">Nama PTK / NIP</th>
-                    <th className="p-1 text-center border-r border-slate-500">Status / Ijazah</th>
-                    <th className="p-1 text-left border-r border-slate-500">Tugas Pokok KBM</th>
-                    <th className="p-1 text-left">Tugas Tim Portofolio PKKRA</th>
+                  <tr className="bg-white border-b border-black font-bold uppercase text-center">
+                    <th className="p-1 w-6 border-r border-black bg-white">No</th>
+                    <th className="p-1 text-left border-r border-black bg-white">Nama PTK / NIP</th>
+                    <th className="p-1 text-center border-r border-black bg-white">Status / Ijazah</th>
+                    <th className="p-1 text-left border-r border-black bg-white">Tugas Pokok KBM</th>
+                    <th className="p-1 text-left bg-white">Tugas Tim Portofolio PKKRA</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-400">
+                <tbody className="divide-y divide-black">
                   {ptkList.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-2 text-center text-slate-500 italic">
+                      <td colSpan={5} className="p-2 text-center text-black italic bg-white">
                         Belum ada data PTK diinput pada menu Data Guru &amp; Tendik.
                       </td>
                     </tr>
                   ) : (
                     ptkList.map((ptk, idx) => (
                       <tr key={ptk.id}>
-                        <td className="p-1 text-center font-mono tabular-nums border-r border-slate-400">{idx + 1}</td>
-                        <td className="p-1 border-r border-slate-400">
+                        <td className="p-1 text-center font-mono tabular-nums border-r border-black bg-white">{idx + 1}</td>
+                        <td className="p-1 border-r border-black bg-white">
                           <strong className="block">{ptk.nama}</strong>
-                          <span className="font-mono text-[8.5px] text-slate-700">NIP. {ptk.nip}</span>
+                          <span className="font-mono text-[8.5px] text-black">NIP. {ptk.nip}</span>
                         </td>
-                        <td className="p-1 text-center border-r border-slate-400">
+                        <td className="p-1 text-center border-r border-black bg-white">
                           {ptk.statusPegawai} · {ptk.pendidikanTerakhir}
                         </td>
-                        <td className="p-1 border-r border-slate-400">{ptk.tugas}</td>
-                        <td className="p-1 font-medium text-emerald-950">{getSkRoleForPtk(ptk.tugas, idx)}</td>
+                        <td className="p-1 border-r border-black bg-white">{ptk.tugas}</td>
+                        <td className="p-1 font-medium text-black bg-white">{getSkRoleForPtk(ptk.tugas, idx)}</td>
                       </tr>
                     ))
                   )}
@@ -1807,11 +1881,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
             <div className="space-y-3.5">
               <KopSuratDinas variant="kemenag" />
 
-              <div className="text-center my-2">
-                <h2 className="text-sm font-black uppercase underline underline-offset-4 tracking-wide">
+              <div className="text-center my-2 pb-2 border-b-2 border-[#008000]">
+                <h2 className="text-sm font-black uppercase tracking-wide text-black">
                   BERITA ACARA PELAKSANAAN PENILAIAN KINERJA KEPALA RA (PKKRA)
                 </h2>
-                <p className="text-xs font-mono font-semibold mt-0.5">
+                <p className="text-xs font-mono font-semibold mt-0.5 text-black">
                   Nomor: {adminDocs.beritaAcaraNomor || '-'}
                 </p>
               </div>
@@ -1820,23 +1894,23 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 Pada hari ini <strong>{adminDocs.beritaAcaraHari || '-'}</strong>, tanggal <strong>{adminDocs.beritaAcaraTanggal || '-'}</strong>, pukul <strong>{adminDocs.beritaAcaraWaktu || '-'}</strong>, bertempat di <strong>{adminDocs.beritaAcaraTempat || institution.namaLembaga}</strong>, telah dilaksanakan Penilaian Kinerja Kepala Raudhatul Athfal (PKKRA) Tahun Pelajaran {institution.tahunPelajaran || '-'} terhadap:
               </p>
 
-              <table className="w-full text-xs border border-slate-400 border-collapse">
-                <tbody className="divide-y divide-slate-300">
+              <table className="w-full text-xs border border-black border-collapse bg-white">
+                <tbody className="divide-y divide-black">
                   <tr>
-                    <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300 w-48">Nama Kepala RA</td>
-                    <td className="p-1.5 font-bold">{principal.namaLengkap || '-'}</td>
+                    <td className="p-1.5 font-semibold bg-white border-r border-black w-48">Nama Kepala RA</td>
+                    <td className="p-1.5 font-bold bg-white">{principal.namaLengkap || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">NIP / NUPTK / NPK</td>
-                    <td className="p-1.5 font-mono">{principal.nip || '-'} / {principal.nuptk || '-'} / {principal.npk || '-'}</td>
+                    <td className="p-1.5 font-semibold bg-white border-r border-black">NIP / NUPTK / NPK</td>
+                    <td className="p-1.5 font-mono bg-white">{principal.nip || '-'} / {principal.nuptk || '-'} / {principal.npk || '-'}</td>
                   </tr>
                   <tr>
-                    <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Satuan Pendidikan</td>
-                    <td className="p-1.5 font-bold">{institution.namaLembaga} (NSM: {institution.nsm || '-'} · NPSN: {institution.npsn || institution.npsm || '-'})</td>
+                    <td className="p-1.5 font-semibold bg-white border-r border-black">Satuan Pendidikan</td>
+                    <td className="p-1.5 font-bold bg-white">{institution.namaLembaga} (NSM: {institution.nsm || '-'} · NPSN: {institution.npsn || institution.npsm || '-'})</td>
                   </tr>
                   <tr>
-                    <td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Jumlah PTK / Peserta Didik</td>
-                    <td className="p-1.5">{ptkList.length} Pendidik/Staf · {totalStudents} Peserta Didik Aktif</td>
+                    <td className="p-1.5 font-semibold bg-white border-r border-black">Jumlah PTK / Peserta Didik</td>
+                    <td className="p-1.5 bg-white">{ptkList.length} Pendidik/Staf · {totalStudents} Peserta Didik Aktif</td>
                   </tr>
                 </tbody>
               </table>
@@ -1851,16 +1925,16 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 </ol>
               </div>
 
-              <div className="border border-slate-400 p-2.5 bg-slate-50/70 space-y-1">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-slate-300 pb-1">
+              <div className="border border-black p-2.5 bg-white space-y-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-black pb-1">
                   <span className="font-bold uppercase">Rekapitulasi Skor Evaluasi Kinerja:</span>
-                  <span className="font-mono font-black text-emerald-950">
+                  <span className="font-mono font-black text-black">
                     {rekapV26.isBothComplete && rekapV26.finalNilaiKinerjaTahunan !== null
                       ? `Nilai Akhir: ${rekapV26.finalNilaiKinerjaTahunan.toFixed(2)} (${rekapV26.finalPredikat})`
                       : `Nilai Akhir: BELUM FINAL (P1 ${rekapV26.penilai1.scoredIndicators}/${rekapV26.penilai1.totalIndicators} · P2 ${rekapV26.penilai2.scoredIndicators}/${rekapV26.penilai2.totalIndicators})`}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-800 italic">
+                <p className="text-[11px] text-black italic">
                   <strong>Catatan Tim Penilai:</strong> {adminDocs.beritaAcaraCatatan || rekapV26.incompleteWarning || '-'}
                 </p>
               </div>
@@ -1870,34 +1944,40 @@ export const PrintView: React.FC<PrintViewProps> = ({
               </p>
             </div>
 
-            <div className="pt-4 avoid-break">
-              <div className="grid grid-cols-2 gap-6 text-center mb-4">
-                <div>
-                  <p className="font-semibold">Kepala RA Yang Dinilai,</p>
-                  <div className="h-14" />
-                  <p className="font-bold underline">{principal.namaLengkap || '-'}</p>
-                  <p className="font-mono text-[10px]">NIP/NPK. {principal.nip && principal.nip !== '-' ? principal.nip : principal.npk || '-'}</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Pengawas Pembina / Penilai 1,</p>
-                  <div className="h-14" />
-                  <p className="font-bold underline">{evaluators.pengawas1Nama || '-'}</p>
-                  <p className="font-mono text-[10px]">NIP. {evaluators.pengawas1Nip || '-'}</p>
-                </div>
-              </div>
+            <div className="pt-4 space-y-4 avoid-break">
+              <AlignedSignatureGrid
+                textSizeClass="text-xs"
+                spaceHeightClass="h-14"
+                slots={[
+                  {
+                    roleLabel: 'Kepala RA Yang Dinilai,',
+                    name: principal.namaLengkap || '-',
+                    idLine: `NIP/NPK. ${principal.nip && principal.nip !== '-' ? principal.nip : principal.npk || '-'}`,
+                  },
+                  {
+                    roleLabel: 'Pengawas Pembina / Penilai 1,',
+                    name: evaluators.pengawas1Nama || '-',
+                    idLine: `NIP. ${evaluators.pengawas1Nip || '-'}`,
+                  },
+                ]}
+              />
 
-              <div className="grid grid-cols-2 gap-6 text-center border-t border-slate-300 pt-3">
-                <div>
-                  <p className="font-semibold">Pengawas Penilai 2,</p>
-                  <div className="h-12" />
-                  <p className="font-bold underline">{evaluators.pengawas2Nama || '-'}</p>
-                  <p className="font-mono text-[10px]">NIP. {evaluators.pengawas2Nip || '-'}</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Saksi / Ketua Komite RA,</p>
-                  <div className="h-12" />
-                  <p className="font-bold underline">{evaluators.komiteNama || '-'}</p>
-                </div>
+              <div className="border-t border-black pt-3">
+                <AlignedSignatureGrid
+                  textSizeClass="text-xs"
+                  spaceHeightClass="h-12"
+                  slots={[
+                    {
+                      roleLabel: 'Pengawas Penilai 2,',
+                      name: evaluators.pengawas2Nama || '-',
+                      idLine: `NIP. ${evaluators.pengawas2Nip || '-'}`,
+                    },
+                    {
+                      roleLabel: 'Saksi / Ketua Komite RA,',
+                      name: evaluators.komiteNama || '-',
+                    },
+                  ]}
+                />
               </div>
             </div>
           </div>
@@ -1907,48 +1987,48 @@ export const PrintView: React.FC<PrintViewProps> = ({
         {/* 7. KATA PENGANTAR, PETUNJUK PENGGUNAAN & DAFTAR ISI            */}
         {/* ============================================================== */}
         {showChapter('pengantar_isi') && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4">
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-black">
             <div>
-              <div className="text-center border-b border-slate-300 pb-1 mb-2">
-                <h3 className="text-xs font-bold uppercase text-slate-900">KATA PENGANTAR</h3>
+              <div className="text-center border-b-2 border-[#008000] pb-1 mb-2">
+                <h3 className="text-xs font-bold uppercase text-black">KATA PENGANTAR</h3>
               </div>
 
-              <div className="text-center text-sm font-bold py-1 text-slate-900">
+              <div className="text-center text-sm font-bold py-1 text-black">
                 بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
               </div>
 
-              <p className="text-[11px] text-slate-800 leading-relaxed text-justify mb-2">
+              <p className="text-[11px] text-black leading-relaxed text-justify mb-2">
                 Alhamdulillahirabbil&apos;alamin, puji syukur ke hadirat Allah Subhanahu wa Ta&apos;ala atas rahmat dan karunia-Nya sehingga Laporan Evaluasi Diri dan Penilaian Kinerja Kepala Raudhatul Athfal (PKKRA) {institution.periodePenilaian || periodLabel || '-'} {institution.namaLembaga} ini dapat diselesaikan dengan baik.
               </p>
 
-              <p className="text-[11px] text-slate-800 leading-relaxed text-justify mb-2">
+              <p className="text-[11px] text-black leading-relaxed text-justify mb-2">
                 Laporan ini disusun sebagai bentuk pertanggungjawaban Kepala RA dalam melaksanakan tugas kepemimpinan, pengelolaan satuan pendidikan, penguatan Kurikulum PIAUD, pembinaan pendidik, serta pengembangan Alat Permainan Edukatif (APE) dan sarana prasarana.
               </p>
 
-              <p className="text-[11px] text-slate-800 leading-relaxed text-justify">
+              <p className="text-[11px] text-black leading-relaxed text-justify">
                 Kami mengucapkan terima kasih yang sebesar-besarnya kepada {adminDocs.namaYayasan || 'Yayasan Penyelenggara'}, Kantor Kementerian Agama {institution.kotaKab || '-'}, Pengawas Pembina RA, Komite Madrasah, serta seluruh dewan guru atas kerja sama dan dukungannya.
               </p>
 
               <div className="text-right text-xs pt-2">
                 <p>{evaluators.tempatPenilaian || '-'}, {currentDateStr}</p>
-                <p className="font-bold text-slate-900">Kepala {institution.namaLembaga},</p>
-                <p className="font-bold underline text-emerald-950 mt-6">{principal.namaLengkap || '-'}</p>
+                <p className="font-bold text-black">Kepala {institution.namaLembaga},</p>
+                <p className="font-bold underline text-black mt-6">{principal.namaLengkap || '-'}</p>
               </div>
             </div>
 
-            <div className="border border-slate-300 p-3 bg-slate-50 text-[10.5px] space-y-1">
-              <h4 className="font-bold text-slate-900 uppercase border-b border-slate-200 pb-0.5">
+            <div className="border border-black p-3 bg-white text-[10.5px] space-y-1">
+              <h4 className="font-bold text-black uppercase border-b border-black pb-0.5">
                 PETUNJUK PENGGUNAAN DOKUMEN LAPORAN
               </h4>
-              <ul className="list-disc pl-4 space-y-0.5 text-slate-800">
+              <ul className="list-disc pl-4 space-y-0.5 text-black">
                 <li>Dokumen ini merupakan berkas resmi portofolio dan evaluasi diri Kepala {institution.namaLembaga}.</li>
                 <li>Seluruh nomor indikator dan bukti fisik disesuaikan dengan instrumen resmi PKKM_v.26 Kemenag ({activeInds.length} indikator).</li>
                 <li>Dilengkapi berkas naskah dinas lengkap serta Format 1–10 Kemenag dalam satu bundel A4 siap cetak.</li>
               </ul>
             </div>
 
-            <div className="border border-slate-300 p-3 bg-white space-y-1 text-xs">
-              <h4 className="font-bold text-slate-900 uppercase border-b border-slate-300 pb-1 text-center">
+            <div className="border border-black p-3 bg-white space-y-1 text-xs">
+              <h4 className="font-bold text-black uppercase border-b border-black pb-1 text-center">
                 DAFTAR ISI BUNDEL LENGKAP LAPORAN PKKRA
               </h4>
               <div className="space-y-1 font-mono text-[10.5px]">
@@ -1959,7 +2039,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 <div className="flex justify-between"><span>Surat Tugas Tim Penilai ({adminDocs.suratTugasNomor || '-'})</span><span>Naskah Dinas</span></div>
                 <div className="flex justify-between"><span>SK Pembagian Tugas PTK ({adminDocs.skPanitiaNomor || '-'})</span><span>Naskah Dinas</span></div>
                 <div className="flex justify-between"><span>Berita Acara Pelaksanaan PKKRA ({adminDocs.beritaAcaraNomor || '-'})</span><span>Naskah Dinas</span></div>
-                <div className="flex justify-between font-bold text-emerald-950"><span>BAB I – VII LAPORAN EVALUASI DIRI KEPALA RA</span><span>Bab I–VII</span></div>
+                <div className="flex justify-between font-bold text-black"><span>BAB I – VII LAPORAN EVALUASI DIRI KEPALA RA</span><span>Bab I–VII</span></div>
                 <div className="flex justify-between"><span>Format 5 &amp; 6: Hasil Penilaian Independen Penilai 1 &amp; 2</span><span>Hasil Penilai</span></div>
                 <div className="flex justify-between"><span>Format 7 &amp; 8: Rekap Nilai Tahunan &amp; Grafik Perbandingan</span><span>Rekapitulasi</span></div>
                 <div className="flex justify-between"><span>Format 9 &amp; 10: Rekap Bukti Fisik &amp; Rekomendasi RTL</span><span>Bukti &amp; RTL</span></div>
@@ -1974,12 +2054,12 @@ export const PrintView: React.FC<PrintViewProps> = ({
         {/* 8–14. BAB I - VII                                              */}
         {/* ============================================================== */}
         {showChapter('bab1') && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs leading-relaxed">
-            <div className="border-b-2 border-emerald-950 pb-1 mb-2">
-              <h2 className="text-sm font-extrabold uppercase text-emerald-950 tracking-wide">BAB I PENDAHULUAN</h2>
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs leading-relaxed text-black">
+            <div className="border-b-2 border-[#008000] pb-1 mb-2">
+              <h2 className="text-sm font-extrabold uppercase text-black tracking-wide">BAB I PENDAHULUAN</h2>
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 uppercase mb-1">A. Latar Belakang</h3>
+              <h3 className="font-bold text-black uppercase mb-1">A. Latar Belakang</h3>
               <p className="text-justify mb-2">
                 Kepala Raudhatul Athfal memiliki tanggung jawab utama memimpin dan mengelola satuan pendidikan anak usia dini agar layanan berjalan terarah, aman, bermutu, dan sesuai dengan tahap perkembangan anak.
               </p>
@@ -1988,8 +2068,8 @@ export const PrintView: React.FC<PrintViewProps> = ({
               </p>
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 uppercase mb-1">B. Dasar Hukum Pelaksanaan</h3>
-              <ol className="list-decimal pl-4 space-y-1 text-slate-800">
+              <h3 className="font-bold text-black uppercase mb-1">B. Dasar Hukum Pelaksanaan</h3>
+              <ol className="list-decimal pl-4 space-y-1 text-black">
                 {programGoals.landasanHukum.map((item, idx) => (
                   <li key={idx}>{item}</li>
                 ))}
@@ -2001,38 +2081,38 @@ export const PrintView: React.FC<PrintViewProps> = ({
         )}
 
         {showChapter('bab2') && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs">
-            <div className="border-b-2 border-emerald-950 pb-1 mb-2">
-              <h2 className="text-sm font-extrabold uppercase text-emerald-950 tracking-wide">BAB II PROFIL DAN ARAH PENGEMBANGAN RA</h2>
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
+            <div className="border-b-2 border-[#008000] pb-1 mb-2">
+              <h2 className="text-sm font-extrabold uppercase text-black tracking-wide">BAB II PROFIL DAN ARAH PENGEMBANGAN RA</h2>
             </div>
-            <table className="w-full text-xs border border-slate-400 border-collapse mb-2">
+            <table className="w-full text-xs border border-black border-collapse mb-2 bg-white">
               <thead>
-                <tr className="bg-slate-100 font-bold border-b border-slate-400 uppercase">
-                  <th className="p-1.5 text-left w-44 border-r border-slate-400">Aspek Kelembagaan</th>
-                  <th className="p-1.5 text-left">Kondisi Riil {institution.namaLembaga}</th>
+                <tr className="bg-white font-bold border-b border-black uppercase">
+                  <th className="p-1.5 text-left w-44 border-r border-black bg-white">Aspek Kelembagaan</th>
+                  <th className="p-1.5 text-left bg-white">Kondisi Riil {institution.namaLembaga}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-300">
-                <tr><td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Penyelenggara &amp; IJOP</td><td className="p-1.5">{adminDocs.namaYayasan || '-'} · SK IJOP: <span className="font-mono">{adminDocs.izinOperasionalNomor || '-'}</span></td></tr>
-                <tr><td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Peringkat Akreditasi</td><td className="p-1.5 font-bold text-emerald-900">{institution.accreditationDetail?.peringkat || institution.akreditasi || '-'}</td></tr>
-                <tr><td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Jumlah Pendidik &amp; Staf</td><td className="p-1.5">{ptkList.length} Orang {ptkList.length > 0 ? `(${ptkList.map((p) => p.nama).join(', ')})` : ''}</td></tr>
-                <tr><td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Jumlah Peserta Didik</td><td className="p-1.5 font-bold tabular-nums">{totalStudents} Santri {students.length > 0 ? `(${students.map((s) => `${s.kelas}: ${s.lakiLaki + s.perempuan}`).join(' · ')})` : ''}</td></tr>
-                <tr><td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Sarana Bangunan &amp; APE</td><td className="p-1.5">{buildings.length} bangunan · {inventory.length} item inventaris &amp; APE</td></tr>
-                <tr><td className="p-1.5 font-semibold bg-slate-50 border-r border-slate-300">Status Lahan &amp; Bangunan</td><td className="p-1.5">{institution.statusTanah || '-'} ({institution.luasTanah || '-'})</td></tr>
+              <tbody className="divide-y divide-black">
+                <tr><td className="p-1.5 font-semibold bg-white border-r border-black">Penyelenggara &amp; IJOP</td><td className="p-1.5 bg-white">{adminDocs.namaYayasan || '-'} · SK IJOP: <span className="font-mono">{adminDocs.izinOperasionalNomor || '-'}</span></td></tr>
+                <tr><td className="p-1.5 font-semibold bg-white border-r border-black">Peringkat Akreditasi</td><td className="p-1.5 font-bold text-black bg-white">{institution.accreditationDetail?.peringkat || institution.akreditasi || '-'}</td></tr>
+                <tr><td className="p-1.5 font-semibold bg-white border-r border-black">Jumlah Pendidik &amp; Staf</td><td className="p-1.5 bg-white">{ptkList.length} Orang {ptkList.length > 0 ? `(${ptkList.map((p) => p.nama).join(', ')})` : ''}</td></tr>
+                <tr><td className="p-1.5 font-semibold bg-white border-r border-black">Jumlah Peserta Didik</td><td className="p-1.5 font-bold tabular-nums bg-white">{totalStudents} Santri {students.length > 0 ? `(${students.map((s) => `${s.kelas}: ${s.lakiLaki + s.perempuan}`).join(' · ')})` : ''}</td></tr>
+                <tr><td className="p-1.5 font-semibold bg-white border-r border-black">Sarana Bangunan &amp; APE</td><td className="p-1.5 bg-white">{buildings.length} bangunan · {inventory.length} item inventaris &amp; APE</td></tr>
+                <tr><td className="p-1.5 font-semibold bg-white border-r border-black">Status Lahan &amp; Bangunan</td><td className="p-1.5 bg-white">{institution.statusTanah || '-'} ({institution.luasTanah || '-'})</td></tr>
               </tbody>
             </table>
 
-            <div className="border border-slate-300 p-3 bg-slate-50/70 space-y-2">
+            <div className="border border-black p-3 bg-white space-y-2">
               <div>
-                <span className="text-[10px] font-bold text-emerald-950 uppercase block">VISI UTAMA:</span>
-                <p className="text-xs font-bold text-slate-900 italic">&ldquo;{programGoals.visi || '-'}&rdquo;</p>
+                <span className="text-[10px] font-bold text-black uppercase block">VISI UTAMA:</span>
+                <p className="text-xs font-bold text-black italic">&ldquo;{programGoals.visi || '-'}&rdquo;</p>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-emerald-950 uppercase block">MISI RAUDHATUL ATHFAL:</span>
+                <span className="text-[10px] font-bold text-black uppercase block">MISI RAUDHATUL ATHFAL:</span>
                 {programGoals.misi.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic">Belum ada daftar misi yang diisi.</p>
+                  <p className="text-xs text-black italic">Belum ada daftar misi yang diisi.</p>
                 ) : (
-                  <ol className="list-decimal pl-4 text-xs space-y-0.5 text-slate-800">
+                  <ol className="list-decimal pl-4 text-xs space-y-0.5 text-black">
                     {programGoals.misi.map((m, i) => (
                       <li key={i}>{m}</li>
                     ))}
@@ -2044,55 +2124,55 @@ export const PrintView: React.FC<PrintViewProps> = ({
         )}
 
         {showChapter('bab3') && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs">
-            <div className="border-b-2 border-emerald-950 pb-1 mb-2">
-              <h2 className="text-sm font-extrabold uppercase text-emerald-950 tracking-wide">BAB III PELAKSANAAN TUGAS DAN EVALUASI KINERJA</h2>
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
+            <div className="border-b-2 border-[#008000] pb-1 mb-2">
+              <h2 className="text-sm font-extrabold uppercase text-black tracking-wide">BAB III PELAKSANAAN TUGAS DAN EVALUASI KINERJA</h2>
             </div>
             <div className="space-y-3 text-justify">
               <div>
-                <h3 className="font-bold text-slate-900 uppercase">A. Perencanaan Program</h3>
-                <p className="text-slate-800">Kepala RA mengoordinasikan penyusunan program berdasarkan visi, misi, RKJM, RKT, Kalender Pendidikan, dan RKAM BOP.</p>
+                <h3 className="font-bold text-black uppercase">A. Perencanaan Program</h3>
+                <p className="text-black">Kepala RA mengoordinasikan penyusunan program berdasarkan visi, misi, RKJM, RKT, Kalender Pendidikan, dan RKAM BOP.</p>
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 uppercase">B. Pengorganisasian dan Pembagian Tugas</h3>
-                <p className="text-slate-800">Pembagian tugas {ptkList.length} orang pendidik dan staf dituangkan dalam Keputusan Kepala RA Nomor {adminDocs.skPanitiaNomor || '-'}.</p>
+                <h3 className="font-bold text-black uppercase">B. Pengorganisasian dan Pembagian Tugas</h3>
+                <p className="text-black">Pembagian tugas {ptkList.length} orang pendidik dan staf dituangkan dalam Keputusan Kepala RA Nomor {adminDocs.skPanitiaNomor || '-'}.</p>
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 uppercase">C. Pelaksanaan, Pengawasan &amp; Sarana APE</h3>
-                <p className="text-slate-800">Pelaksanaan KBM, pengelolaan BOP transparan, supervisi akademik guru, serta pemeriksaan keamanan sarana bermain indoor/outdoor.</p>
+                <h3 className="font-bold text-black uppercase">C. Pelaksanaan, Pengawasan &amp; Sarana APE</h3>
+                <p className="text-black">Pelaksanaan KBM, pengelolaan BOP transparan, supervisi akademik guru, serta pemeriksaan keamanan sarana bermain indoor/outdoor.</p>
               </div>
             </div>
           </div>
         )}
 
         {showChapter('bab4') && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs">
-            <div className="border-b-2 border-emerald-950 pb-1 mb-2">
-              <h2 className="text-sm font-extrabold uppercase text-emerald-950 tracking-wide">BAB IV HASIL EVALUASI DIRI KOMPONEN KINERJA</h2>
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
+            <div className="border-b-2 border-[#008000] pb-1 mb-2">
+              <h2 className="text-sm font-extrabold uppercase text-black tracking-wide">BAB IV HASIL EVALUASI DIRI KOMPONEN KINERJA</h2>
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 uppercase mb-1">Rekapitulasi Penugasan &amp; Supervisi Pendidik ({ptkList.length} PTK)</h3>
-              <table className="w-full text-[9.5px] border border-slate-400 border-collapse">
+              <h3 className="font-bold text-black uppercase mb-1">Rekapitulasi Penugasan &amp; Supervisi Pendidik ({ptkList.length} PTK)</h3>
+              <table className="w-full text-[9.5px] border border-black border-collapse bg-white">
                 <thead>
-                  <tr className="bg-slate-100 font-bold border-b border-slate-400 uppercase">
-                    <th className="p-1 text-center w-6 border-r border-slate-400">No</th>
-                    <th className="p-1 text-left border-r border-slate-400">Nama Guru</th>
-                    <th className="p-1 text-left border-r border-slate-400">Tugas Pokok</th>
-                    <th className="p-1 text-center border-r border-slate-400">Pendidikan</th>
-                    <th className="p-1 text-center">Status</th>
+                  <tr className="bg-white font-bold border-b border-black uppercase">
+                    <th className="p-1 text-center w-6 border-r border-black bg-white">No</th>
+                    <th className="p-1 text-left border-r border-black bg-white">Nama Guru</th>
+                    <th className="p-1 text-left border-r border-black bg-white">Tugas Pokok</th>
+                    <th className="p-1 text-center border-r border-black bg-white">Pendidikan</th>
+                    <th className="p-1 text-center bg-white">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-300">
+                <tbody className="divide-y divide-black">
                   {ptkList.length === 0 ? (
-                    <tr><td colSpan={5} className="p-2 text-center text-slate-500 italic">Belum ada data PTK.</td></tr>
+                    <tr><td colSpan={5} className="p-2 text-center text-black italic bg-white">Belum ada data PTK.</td></tr>
                   ) : (
                     ptkList.map((ptk, idx) => (
                       <tr key={ptk.id}>
-                        <td className="p-1 text-center font-mono tabular-nums">{idx + 1}</td>
-                        <td className="p-1 font-bold">{ptk.nama}</td>
-                        <td className="p-1">{ptk.tugas}</td>
-                        <td className="p-1 text-center">{ptk.pendidikanTerakhir}</td>
-                        <td className="p-1 text-center">{ptk.statusPegawai}</td>
+                        <td className="p-1 text-center font-mono tabular-nums border-r border-black bg-white">{idx + 1}</td>
+                        <td className="p-1 font-bold border-r border-black bg-white">{ptk.nama}</td>
+                        <td className="p-1 border-r border-black bg-white">{ptk.tugas}</td>
+                        <td className="p-1 text-center border-r border-black bg-white">{ptk.pendidikanTerakhir}</td>
+                        <td className="p-1 text-center bg-white">{ptk.statusPegawai}</td>
                       </tr>
                     ))
                   )}
@@ -2103,30 +2183,30 @@ export const PrintView: React.FC<PrintViewProps> = ({
         )}
 
         {showChapter('bab5') && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs">
-            <div className="border-b-2 border-emerald-950 pb-1 mb-2">
-              <h2 className="text-sm font-extrabold uppercase text-emerald-950 tracking-wide">BAB V REKAPITULASI BUKTI DUKUNG DAN EVALUASI</h2>
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
+            <div className="border-b-2 border-[#008000] pb-1 mb-2">
+              <h2 className="text-sm font-extrabold uppercase text-black tracking-wide">BAB V REKAPITULASI BUKTI DUKUNG DAN EVALUASI</h2>
             </div>
-            <table className="w-full text-[10px] border border-slate-400 border-collapse">
+            <table className="w-full text-[10px] border border-black border-collapse bg-white">
               <thead>
-                <tr className="bg-slate-100 font-bold border-b border-slate-400">
-                  <th className="p-1.5 text-left border-r border-slate-400">Komponen Kinerja</th>
-                  <th className="p-1.5 text-center border-r border-slate-400">Indikator</th>
-                  <th className="p-1.5 text-center border-r border-slate-400">Kesiapan Kepala RA</th>
-                  <th className="p-1.5 text-center">Berkas Bukti Fisik</th>
+                <tr className="bg-white font-bold border-b border-black">
+                  <th className="p-1.5 text-left border-r border-black bg-white">Komponen Kinerja</th>
+                  <th className="p-1.5 text-center border-r border-black bg-white">Indikator</th>
+                  <th className="p-1.5 text-center border-r border-black bg-white">Kesiapan Kepala RA</th>
+                  <th className="p-1.5 text-center bg-white">Berkas Bukti Fisik</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-300 tabular-nums">
+              <tbody className="divide-y divide-black tabular-nums">
                 {rekapV26.penilai1.components.map((comp) => {
                   const compInds = activeInds.filter((i) => i.komponenCode === comp.komponenCode);
                   const readyCount = compInds.filter((i) => responses[i.id]?.completionStatus === 'complete').length;
                   const evCount = evidenceFiles.filter((ev) => compInds.some((ind) => isEvidenceLinkedToIndicator(ev, ind.id))).length;
                   return (
                     <tr key={comp.komponenCode}>
-                      <td className="p-1.5 border-r border-slate-300 font-semibold">{comp.komponenNomor}. {comp.komponenNama}</td>
-                      <td className="p-1.5 text-center border-r border-slate-300 font-mono">{comp.indicatorCount}</td>
-                      <td className="p-1.5 text-center border-r border-slate-300 font-mono">{readyCount}/{compInds.length} siap</td>
-                      <td className="p-1.5 text-center font-mono">{evCount} berkas</td>
+                      <td className="p-1.5 border-r border-black font-semibold bg-white">{comp.komponenNomor}. {comp.komponenNama}</td>
+                      <td className="p-1.5 text-center border-r border-black font-mono bg-white">{comp.indicatorCount}</td>
+                      <td className="p-1.5 text-center border-r border-black font-mono bg-white">{readyCount}/{compInds.length} siap</td>
+                      <td className="p-1.5 text-center font-mono bg-white">{evCount} berkas</td>
                     </tr>
                   );
                 })}
@@ -2136,38 +2216,38 @@ export const PrintView: React.FC<PrintViewProps> = ({
         )}
 
         {showChapter('bab6') && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs">
-            <div className="border-b-2 border-emerald-950 pb-1 mb-2">
-              <h2 className="text-sm font-extrabold uppercase text-emerald-950 tracking-wide">BAB VI RENCANA TINDAK LANJUT (RTL)</h2>
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
+            <div className="border-b-2 border-[#008000] pb-1 mb-2">
+              <h2 className="text-sm font-extrabold uppercase text-black tracking-wide">BAB VI RENCANA TINDAK LANJUT (RTL)</h2>
             </div>
-            <table className="w-full text-[9.5px] border border-slate-400 border-collapse">
+            <table className="w-full text-[9.5px] border border-black border-collapse bg-white">
               <thead>
-                <tr className="bg-slate-100 font-bold border-b border-slate-400 uppercase">
-                  <th className="p-1 text-center w-6 border-r border-slate-400">No</th>
-                  <th className="p-1 text-left border-r border-slate-400">Temuan &amp; Rekomendasi</th>
-                  <th className="p-1 text-left border-r border-slate-400">Langkah Tindak Lanjut</th>
-                  <th className="p-1 text-center w-24 border-r border-slate-400">PJ / Target</th>
-                  <th className="p-1 text-center w-16">Status</th>
+                <tr className="bg-white font-bold border-b border-black uppercase">
+                  <th className="p-1 text-center w-6 border-r border-black bg-white">No</th>
+                  <th className="p-1 text-left border-r border-black bg-white">Temuan &amp; Rekomendasi</th>
+                  <th className="p-1 text-left border-r border-black bg-white">Langkah Tindak Lanjut</th>
+                  <th className="p-1 text-center w-24 border-r border-black bg-white">PJ / Target</th>
+                  <th className="p-1 text-center w-16 bg-white">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-300">
+              <tbody className="divide-y divide-black">
                 {recommendations.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-2 text-center text-slate-500 italic">
+                    <td colSpan={5} className="p-2 text-center text-black italic bg-white">
                       Belum ada item rekomendasi RTL yang ditambahkan pada menu Rekomendasi &amp; Tindak Lanjut.
                     </td>
                   </tr>
                 ) : (
                   recommendations.map((rec, idx) => (
                     <tr key={rec.recId}>
-                      <td className="p-1 text-center font-mono tabular-nums">{idx + 1}</td>
-                      <td className="p-1">
+                      <td className="p-1 text-center font-mono tabular-nums border-r border-black bg-white">{idx + 1}</td>
+                      <td className="p-1 border-r border-black bg-white">
                         <strong className="block">{rec.komponenNama}</strong>
                         <span>{rec.rekomendasi || rec.temuan}</span>
                       </td>
-                      <td className="p-1">{rec.rencanaTindakLanjut}</td>
-                      <td className="p-1 text-center">{rec.penanggungJawab} ({rec.targetWaktu})</td>
-                      <td className="p-1 text-center font-bold">{rec.status}</td>
+                      <td className="p-1 border-r border-black bg-white">{rec.rencanaTindakLanjut}</td>
+                      <td className="p-1 text-center border-r border-black bg-white">{rec.penanggungJawab} ({rec.targetWaktu})</td>
+                      <td className="p-1 text-center font-bold bg-white">{rec.status}</td>
                     </tr>
                   ))
                 )}
@@ -2177,28 +2257,28 @@ export const PrintView: React.FC<PrintViewProps> = ({
         )}
 
         {showChapter('bab7') && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs">
-            <div className="border-b-2 border-emerald-950 pb-1 mb-2">
-              <h2 className="text-sm font-extrabold uppercase text-emerald-950 tracking-wide">BAB VII PENUTUP</h2>
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
+            <div className="border-b-2 border-[#008000] pb-1 mb-2">
+              <h2 className="text-sm font-extrabold uppercase text-black tracking-wide">BAB VII PENUTUP</h2>
             </div>
             <div className="space-y-3 text-justify leading-relaxed">
               <div>
-                <h3 className="font-bold text-slate-900 uppercase mb-1">A. Kesimpulan</h3>
+                <h3 className="font-bold text-black uppercase mb-1">A. Kesimpulan</h3>
                 <p>
                   Pelaksanaan tugas Kepala {institution.namaLembaga} selama periode {institution.periodePenilaian || periodLabel || '-'} telah terdokumentasi pada seluruh instrumen PKKM v.26 ({activeInds.length} indikator).
                 </p>
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 uppercase mb-1">B. Saran Rekomendasi</h3>
-                <ul className="list-disc pl-4 space-y-0.5 text-slate-800">
+                <h3 className="font-bold text-black uppercase mb-1">B. Saran Rekomendasi</h3>
+                <ul className="list-disc pl-4 space-y-0.5 text-black">
                   <li>Penguatan pembinaan dan pendampingan berkelanjutan dari Pengawas Pembina Kemenag.</li>
                   <li>Pelaksanaan rencana tindak lanjut (RTL) sesuai hasil evaluasi Penilai 1 dan Penilai 2.</li>
                 </ul>
               </div>
               <div className="text-right pt-4 avoid-break">
                 <p>{evaluators.tempatPenilaian || '-'}, {currentDateStr}</p>
-                <p className="font-bold text-slate-900">Kepala {institution.namaLembaga},</p>
-                <p className="font-bold underline text-emerald-950 mt-10">{principal.namaLengkap || '-'}</p>
+                <p className="font-bold text-black">Kepala {institution.namaLembaga},</p>
+                <p className="font-bold underline text-black mt-10">{principal.namaLengkap || '-'}</p>
               </div>
             </div>
           </div>
@@ -2217,8 +2297,8 @@ export const PrintView: React.FC<PrintViewProps> = ({
             </div>
 
             {rekapV26.incompleteWarning && (
-              <div className="border border-amber-400 bg-amber-50 p-2.5 text-[10.5px] text-amber-950 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-700 mt-0.5" />
+              <div className="border border-black bg-white p-2.5 text-[10.5px] text-black flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-black mt-0.5" />
                 <div>
                   <strong className="block">{rekapV26.incompleteWarning}</strong>
                   <span>
@@ -2253,67 +2333,67 @@ export const PrintView: React.FC<PrintViewProps> = ({
               </table>
             </div>
 
-            <table className="w-full text-[11px] border border-black border-collapse tabular-nums">
+            <table className="w-full text-[11px] border border-black border-collapse tabular-nums bg-white">
               <thead>
-                <tr className="bg-[#e8f5e9] font-bold border-b border-black">
-                  <th className="p-2 text-center border-r border-black w-10">No</th>
-                  <th className="p-2 text-center border-r border-black">Komponen</th>
-                  <th className="p-2 text-center border-r border-black w-24">Penilai 1</th>
-                  <th className="p-2 text-center border-r border-black w-24">Penilai 2</th>
-                  <th className="p-2 text-center w-24">Rata-Rata</th>
+                <tr className="bg-white font-bold border-b border-black">
+                  <th className="p-2 text-center border-r border-black w-10 bg-white">No</th>
+                  <th className="p-2 text-center border-r border-black bg-white">Komponen</th>
+                  <th className="p-2 text-center border-r border-black w-24 bg-white">Penilai 1</th>
+                  <th className="p-2 text-center border-r border-black w-24 bg-white">Penilai 2</th>
+                  <th className="p-2 text-center w-24 bg-white">Rata-Rata</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black">
                 {rekapV26.rataRataKomponen.map((row) => (
                   <tr key={row.komponenCode}>
-                    <td className="p-2 text-center border-r border-black font-mono">{row.komponenNomor}</td>
-                    <td className="p-2 border-r border-black font-semibold">{row.komponenNama}</td>
-                    <td className="p-2 text-center border-r border-black font-mono">{row.p1Skor}</td>
-                    <td className="p-2 text-center border-r border-black font-mono">{row.p2Skor}</td>
-                    <td className="p-2 text-center font-mono font-bold">
+                    <td className="p-2 text-center border-r border-black font-mono bg-white">{row.komponenNomor}</td>
+                    <td className="p-2 border-r border-black font-semibold bg-white">{row.komponenNama}</td>
+                    <td className="p-2 text-center border-r border-black font-mono bg-white">{row.p1Skor}</td>
+                    <td className="p-2 text-center border-r border-black font-mono bg-white">{row.p2Skor}</td>
+                    <td className="p-2 text-center font-mono font-bold bg-white">
                       {formatCommaNum(row.rataSkor, 2)}
                     </td>
                   </tr>
                 ))}
-                <tr className="font-bold bg-slate-50">
-                  <td colSpan={2} className="p-2 text-center border-r border-black">
+                <tr className="font-bold bg-white">
+                  <td colSpan={2} className="p-2 text-center border-r border-black bg-white">
                     Jumlah Skor
                   </td>
-                  <td className="p-2 text-center border-r border-black font-mono">{rekapV26.penilai1.jumlahSkor}</td>
-                  <td className="p-2 text-center border-r border-black font-mono">{rekapV26.penilai2.jumlahSkor}</td>
-                  <td className="p-2 text-center font-mono">{formatCommaNum(rekapV26.jumlahSkorRataRata, 2)}</td>
+                  <td className="p-2 text-center border-r border-black font-mono bg-white">{rekapV26.penilai1.jumlahSkor}</td>
+                  <td className="p-2 text-center border-r border-black font-mono bg-white">{rekapV26.penilai2.jumlahSkor}</td>
+                  <td className="p-2 text-center font-mono bg-white">{formatCommaNum(rekapV26.jumlahSkorRataRata, 2)}</td>
                 </tr>
-                <tr className="font-bold bg-slate-50">
-                  <td colSpan={2} className="p-2 text-center border-r border-black">
+                <tr className="font-bold bg-white">
+                  <td colSpan={2} className="p-2 text-center border-r border-black bg-white">
                     Nilai Kinerja
                   </td>
-                  <td className="p-2 text-center border-r border-black font-mono">
+                  <td className="p-2 text-center border-r border-black font-mono bg-white">
                     {rekapV26.penilai1.isComplete ? Math.round(rekapV26.penilai1.nilaiKinerja) : '-'}
                   </td>
-                  <td className="p-2 text-center border-r border-black font-mono">
+                  <td className="p-2 text-center border-r border-black font-mono bg-white">
                     {rekapV26.penilai2.isComplete ? Math.round(rekapV26.penilai2.nilaiKinerja) : '-'}
                   </td>
-                  <td className="p-2 text-center font-mono font-black">
+                  <td className="p-2 text-center font-mono font-black bg-white">
                     {rekapV26.isBothComplete && rekapV26.finalNilaiKinerjaTahunan !== null
                       ? formatCommaNum(rekapV26.finalNilaiKinerjaTahunan, 2)
                       : '-'}
                   </td>
                 </tr>
-                <tr className="bg-[#e8f5e9] font-black text-black">
-                  <td colSpan={2} className="p-2 text-center border-r border-black">
+                <tr className="bg-white font-black text-black">
+                  <td colSpan={2} className="p-2 text-center border-r border-black bg-white">
                     Nilai Kinerja Tahunan
                   </td>
-                  <td colSpan={3} className="p-2 text-center font-mono text-sm">
+                  <td colSpan={3} className="p-2 text-center font-mono text-sm bg-white">
                     {rekapV26.isBothComplete && rekapV26.finalNilaiKinerjaTahunan !== null
                       ? formatCommaNum(rekapV26.finalNilaiKinerjaTahunan, 2)
                       : 'BELUM FINAL'}
                   </td>
                 </tr>
-                <tr className="bg-[#e8f5e9] font-black text-black">
-                  <td colSpan={2} className="p-2 text-center border-r border-black">
+                <tr className="bg-white font-black text-black">
+                  <td colSpan={2} className="p-2 text-center border-r border-black bg-white">
                     Predikat Penilaian Kinerja Tahunan
                   </td>
-                  <td colSpan={3} className="p-2 text-center text-sm uppercase">
+                  <td colSpan={3} className="p-2 text-center text-sm uppercase bg-white">
                     {rekapV26.isBothComplete && rekapV26.finalPredikat
                       ? rekapV26.finalPredikat
                       : 'MENUNGGU KELENGKAPAN P1 & P2'}
@@ -2322,8 +2402,8 @@ export const PrintView: React.FC<PrintViewProps> = ({
               </tbody>
             </table>
 
-            <div className="border border-black p-3 bg-rose-50/60 space-y-1.5 text-[10.5px]">
-              <p className="font-bold text-rose-700">Rekomendasi:</p>
+            <div className="border border-black p-3 bg-white space-y-1.5 text-[10.5px]">
+              <p className="font-bold text-black">Rekomendasi:</p>
               <p>
                 <strong>Penilai 1:</strong> {p1Note || 'Tingkatkan kesinambungan supervisi akademik dan pendampingan kompetensi guru RA.'}
               </p>
@@ -2332,26 +2412,29 @@ export const PrintView: React.FC<PrintViewProps> = ({
               </p>
             </div>
 
-            <div className="pt-8 grid grid-cols-3 gap-4 text-center text-[10px] avoid-break">
-              <div>
-                <p>Kepala {institution.namaLembaga || '-'},</p>
-                <div className="h-16" />
-                <p className="font-bold underline">{principal.namaLengkap || '-'}</p>
-                <p className="font-mono text-[9px]">NIP. {principal.nip || '-'}</p>
-              </div>
-              <div>
-                <p>Penilai 2,</p>
-                <div className="h-16" />
-                <p className="font-bold underline">{evaluators.pengawas2Nama || '-'}</p>
-                <p className="font-mono text-[9px]">NIP. {evaluators.pengawas2Nip || '-'}</p>
-              </div>
-              <div>
-                <p>{evaluators.tempatPenilaian || 'Cirebon'}, {currentDateStr}</p>
-                <p>Penilai 1,</p>
-                <div className="h-16" />
-                <p className="font-bold underline">{evaluators.pengawas1Nama || '-'}</p>
-                <p className="font-mono text-[9px]">NIP. {evaluators.pengawas1Nip || '-'}</p>
-              </div>
+            <div className="pt-8">
+              <AlignedSignatureGrid
+                textSizeClass="text-[10px]"
+                spaceHeightClass="h-16"
+                slots={[
+                  {
+                    roleLabel: `Kepala ${institution.namaLembaga || '-'},`,
+                    name: principal.namaLengkap || '-',
+                    idLine: `NIP. ${principal.nip || '-'}`,
+                  },
+                  {
+                    roleLabel: 'Penilai 2,',
+                    name: evaluators.pengawas2Nama || '-',
+                    idLine: `NIP. ${evaluators.pengawas2Nip || '-'}`,
+                  },
+                  {
+                    dateLine: `${evaluators.tempatPenilaian || 'Cirebon'}, ${currentDateStr}`,
+                    roleLabel: 'Penilai 1,',
+                    name: evaluators.pengawas1Nama || '-',
+                    idLine: `NIP. ${evaluators.pengawas1Nip || '-'}`,
+                  },
+                ]}
+              />
             </div>
           </div>
         )}
@@ -2363,16 +2446,16 @@ export const PrintView: React.FC<PrintViewProps> = ({
           <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
             <KopSuratDinas variant="kemenag" />
 
-            <div className="text-center space-y-0.5">
-              <p className="text-[10px] font-bold uppercase text-emerald-900">FORMAT 8 · GRAFIK PERBANDINGAN PENILAI 1 &amp; PENILAI 2</p>
-              <h2 className="text-sm font-black uppercase underline underline-offset-4">
+            <div className="text-center space-y-0.5 pb-2 border-b-2 border-[#008000]">
+              <p className="text-[10px] font-bold uppercase text-black">FORMAT 8 · GRAFIK PERBANDINGAN PENILAI 1 &amp; PENILAI 2</p>
+              <h2 className="text-sm font-black uppercase text-black">
                 GRAFIK CAPAIAN KOMPONEN KINERJA KEPALA RA (%)
               </h2>
             </div>
 
-            <div className="space-y-3 border border-slate-300 p-4 bg-slate-50/40">
+            <div className="space-y-3 border border-black p-4 bg-white">
               {rekapV26.rataRataKomponen.map((row) => (
-                <div key={row.komponenCode} className="bg-white border border-slate-300 p-3 space-y-1.5">
+                <div key={row.komponenCode} className="bg-white border border-black p-3 space-y-1.5">
                   <div className="flex justify-between font-bold text-[11px]">
                     <span>{row.komponenNomor}. {row.komponenNama}</span>
                     <span className="font-mono tabular-nums">Rata-rata: {row.rataNilai100.toFixed(1)}%</span>
@@ -2380,14 +2463,14 @@ export const PrintView: React.FC<PrintViewProps> = ({
                   <div className="space-y-1 text-[10px] tabular-nums">
                     <div className="flex items-center gap-2">
                       <span className="w-16 font-semibold">Penilai 1</span>
-                      <div className="flex-1 h-3 bg-slate-100 border border-slate-300 overflow-hidden">
+                      <div className="flex-1 h-3 bg-white border border-black overflow-hidden">
                         <div className="h-full bg-emerald-800" style={{ width: `${row.p1Nilai100}%` }} />
                       </div>
                       <span className="w-12 text-right font-mono font-bold">{row.p1Nilai100.toFixed(1)}%</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-16 font-semibold">Penilai 2</span>
-                      <div className="flex-1 h-3 bg-slate-100 border border-slate-300 overflow-hidden">
+                      <div className="flex-1 h-3 bg-white border border-black overflow-hidden">
                         <div className="h-full bg-amber-600" style={{ width: `${row.p2Nilai100}%` }} />
                       </div>
                       <span className="w-12 text-right font-mono font-bold">{row.p2Nilai100.toFixed(1)}%</span>
@@ -2397,14 +2480,14 @@ export const PrintView: React.FC<PrintViewProps> = ({
               ))}
             </div>
 
-            <div className="border border-slate-300 p-3 text-[10px]">
+            <div className="border border-black p-3 bg-white text-[10px]">
               <p className="font-bold uppercase mb-1">Rentang Predikat Resmi Kementerian Agama RI:</p>
               <div className="grid grid-cols-5 gap-1 text-center font-mono">
-                <div className="p-1 border border-slate-300">90,01–100: Amat Baik</div>
-                <div className="p-1 border border-slate-300">75,01–90: Baik</div>
-                <div className="p-1 border border-slate-300">60,01–75: Cukup</div>
-                <div className="p-1 border border-slate-300">50,01–60: Sedang</div>
-                <div className="p-1 border border-slate-300">≤ 50,00: Kurang</div>
+                <div className="p-1 border border-black bg-white">90,01–100: Amat Baik</div>
+                <div className="p-1 border border-black bg-white">75,01–90: Baik</div>
+                <div className="p-1 border border-black bg-white">60,01–75: Cukup</div>
+                <div className="p-1 border border-black bg-white">50,01–60: Sedang</div>
+                <div className="p-1 border border-black bg-white">≤ 50,00: Kurang</div>
               </div>
             </div>
           </div>
@@ -2417,27 +2500,27 @@ export const PrintView: React.FC<PrintViewProps> = ({
           <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
             <KopSuratDinas variant="yayasan" />
 
-            <div className="text-center">
-              <p className="text-[10px] font-bold uppercase text-emerald-900">FORMAT 9 · DAFTAR REKAPITULASI BUKTI FISIK</p>
-              <h2 className="text-sm font-black uppercase underline underline-offset-4">
+            <div className="text-center pb-2 border-b-2 border-[#008000]">
+              <p className="text-[10px] font-bold uppercase text-black">FORMAT 9 · DAFTAR REKAPITULASI BUKTI FISIK</p>
+              <h2 className="text-sm font-black uppercase text-black">
                 REKAPITULASI ARSIP BUKTI FISIK PORTOFOLIO PKKRA
               </h2>
             </div>
 
-            <table className="w-full text-[9.5px] border border-slate-400 border-collapse tabular-nums">
+            <table className="w-full text-[9.5px] border border-black border-collapse tabular-nums bg-white">
               <thead>
-                <tr className="bg-slate-100 font-bold border-b border-slate-400">
-                  <th className="p-1.5 text-center border-r border-slate-400 w-8">No</th>
-                  <th className="p-1.5 text-left border-r border-slate-400">Nama Berkas</th>
-                  <th className="p-1.5 text-left border-r border-slate-400 w-28">Indikator Tertaut</th>
-                  <th className="p-1.5 text-center border-r border-slate-400 w-16">Ukuran</th>
-                  <th className="p-1.5 text-center w-28">Status Verifikasi</th>
+                <tr className="bg-white font-bold border-b border-black">
+                  <th className="p-1.5 text-center border-r border-black w-8 bg-white">No</th>
+                  <th className="p-1.5 text-left border-r border-black bg-white">Nama Berkas</th>
+                  <th className="p-1.5 text-left border-r border-black w-28 bg-white">Indikator Tertaut</th>
+                  <th className="p-1.5 text-center border-r border-black w-16 bg-white">Ukuran</th>
+                  <th className="p-1.5 text-center w-28 bg-white">Status Verifikasi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-300">
+              <tbody className="divide-y divide-black">
                 {evidenceFiles.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-3 text-center text-slate-500 italic">
+                    <td colSpan={5} className="p-3 text-center text-black italic bg-white">
                       Belum ada berkas bukti fisik yang diunggah pada menu Bukti Fisik.
                     </td>
                   </tr>
@@ -2448,16 +2531,16 @@ export const PrintView: React.FC<PrintViewProps> = ({
                       : [ev.indicatorId];
                     return (
                       <tr key={ev.evidenceId}>
-                        <td className="p-1.5 text-center border-r border-slate-300 font-mono">{idx + 1}</td>
-                        <td className="p-1.5 border-r border-slate-300">
+                        <td className="p-1.5 text-center border-r border-black font-mono bg-white">{idx + 1}</td>
+                        <td className="p-1.5 border-r border-black bg-white">
                           <strong className="block">{ev.fileName}</strong>
-                          <span className="text-[8.5px] text-slate-600">{ev.description}</span>
+                          <span className="text-[8.5px] text-black">{ev.description}</span>
                         </td>
-                        <td className="p-1.5 border-r border-slate-300 font-mono">{linked.join(', ')}</td>
-                        <td className="p-1.5 text-center border-r border-slate-300 font-mono">
+                        <td className="p-1.5 border-r border-black font-mono bg-white">{linked.join(', ')}</td>
+                        <td className="p-1.5 text-center border-r border-black font-mono bg-white">
                           {Math.max(1, Math.round(ev.sizeBytes / 1024))} KB
                         </td>
-                        <td className="p-1.5 text-center font-semibold">
+                        <td className="p-1.5 text-center font-semibold bg-white">
                           {VERIF_LABEL[ev.verificationStatus] || ev.verificationStatus}
                         </td>
                       </tr>
@@ -2476,48 +2559,48 @@ export const PrintView: React.FC<PrintViewProps> = ({
           <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
             <KopSuratDinas variant="kemenag" />
 
-            <div className="text-center">
-              <p className="text-[10px] font-bold uppercase text-emerald-900">FORMAT 10 · REKOMENDASI &amp; RENCANA TINDAK LANJUT</p>
-              <h2 className="text-sm font-black uppercase underline underline-offset-4">
+            <div className="text-center pb-2 border-b-2 border-[#008000]">
+              <p className="text-[10px] font-bold uppercase text-black">FORMAT 10 · REKOMENDASI &amp; RENCANA TINDAK LANJUT</p>
+              <h2 className="text-sm font-black uppercase text-black">
                 REKOMENDASI PEMBINAAN &amp; RENCANA TINDAK LANJUT (RTL)
               </h2>
             </div>
 
-            <table className="w-full text-[9.5px] border border-slate-400 border-collapse">
+            <table className="w-full text-[9.5px] border border-black border-collapse bg-white">
               <thead>
-                <tr className="bg-slate-100 font-bold border-b border-slate-400">
-                  <th className="p-1.5 text-center border-r border-slate-400 w-7">No</th>
-                  <th className="p-1.5 text-left border-r border-slate-400 w-20">Sumber</th>
-                  <th className="p-1.5 text-left border-r border-slate-400">Komponen &amp; Temuan</th>
-                  <th className="p-1.5 text-left border-r border-slate-400">Rekomendasi &amp; Rencana Tindak Lanjut</th>
-                  <th className="p-1.5 text-center border-r border-slate-400 w-24">PJ &amp; Target</th>
-                  <th className="p-1.5 text-center w-16">Status</th>
+                <tr className="bg-white font-bold border-b border-black">
+                  <th className="p-1.5 text-center border-r border-black w-7 bg-white">No</th>
+                  <th className="p-1.5 text-left border-r border-black w-20 bg-white">Sumber</th>
+                  <th className="p-1.5 text-left border-r border-black bg-white">Komponen &amp; Temuan</th>
+                  <th className="p-1.5 text-left border-r border-black bg-white">Rekomendasi &amp; Rencana Tindak Lanjut</th>
+                  <th className="p-1.5 text-center border-r border-black w-24 bg-white">PJ &amp; Target</th>
+                  <th className="p-1.5 text-center w-16 bg-white">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-300">
+              <tbody className="divide-y divide-black">
                 {recommendations.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-3 text-center text-slate-500 italic">
+                    <td colSpan={6} className="p-3 text-center text-black italic bg-white">
                       Belum ada rekomendasi &amp; RTL tercatat. Silakan tambahkan atau tarik dari catatan Penilai pada menu Rekomendasi &amp; Tindak Lanjut.
                     </td>
                   </tr>
                 ) : (
                   recommendations.map((rec, idx) => (
                     <tr key={rec.recId}>
-                      <td className="p-1.5 text-center border-r border-slate-300 font-mono">{idx + 1}</td>
-                      <td className="p-1.5 border-r border-slate-300 font-semibold">{rec.sourceRole}</td>
-                      <td className="p-1.5 border-r border-slate-300">
+                      <td className="p-1.5 text-center border-r border-black font-mono bg-white">{idx + 1}</td>
+                      <td className="p-1.5 border-r border-black font-semibold bg-white">{rec.sourceRole}</td>
+                      <td className="p-1.5 border-r border-black bg-white">
                         <strong className="block">{rec.komponenNama}</strong>
                         <span>{rec.temuan}</span>
                       </td>
-                      <td className="p-1.5 border-r border-slate-300">
+                      <td className="p-1.5 border-r border-black bg-white">
                         <p className="font-semibold">{rec.rekomendasi}</p>
-                        <p className="text-slate-700 mt-0.5">RTL: {rec.rencanaTindakLanjut}</p>
+                        <p className="text-black mt-0.5">RTL: {rec.rencanaTindakLanjut}</p>
                       </td>
-                      <td className="p-1.5 text-center border-r border-slate-300">
+                      <td className="p-1.5 text-center border-r border-black bg-white">
                         {rec.penanggungJawab} · {rec.targetWaktu}
                       </td>
-                      <td className="p-1.5 text-center font-bold">{rec.status}</td>
+                      <td className="p-1.5 text-center font-bold bg-white">{rec.status}</td>
                     </tr>
                   ))
                 )}
@@ -2531,30 +2614,30 @@ export const PrintView: React.FC<PrintViewProps> = ({
         {/* ============================================================== */}
         {showSection('format4_instrumen_96') && (
           <div className="a4-sheet-landscape bg-white p-5 border border-slate-300 shadow-md mx-auto mb-8 max-w-[297mm] space-y-3 text-xs text-black">
-            <div className="flex items-center justify-between border-b-2 border-emerald-950 pb-2">
+            <div className="flex items-center justify-between border-b-2 border-[#008000] pb-2">
               <div>
-                <p className="text-[10px] font-bold uppercase text-emerald-900">FORMAT 4 · INSTRUMEN PENILAIAN KINERJA ({activeInds.length} INDIKATOR)</p>
-                <h2 className="text-sm font-black uppercase">
+                <p className="text-[10px] font-bold uppercase text-black">FORMAT 4 · INSTRUMEN PENILAIAN KINERJA ({activeInds.length} INDIKATOR)</p>
+                <h2 className="text-sm font-black uppercase text-black">
                   MATRIKS INSTRUMEN PKKM_v.26 — {institution.namaLembaga}
                 </h2>
               </div>
-              <span className="text-[10px] font-mono text-slate-600">{periodLabel || institution.periodePenilaian}</span>
+              <span className="text-[10px] font-mono text-black">{periodLabel || institution.periodePenilaian}</span>
             </div>
 
-            <table className="w-full text-[8.5px] border border-slate-400 border-collapse tabular-nums">
+            <table className="w-full text-[8.5px] border border-black border-collapse tabular-nums bg-white">
               <thead>
-                <tr className="bg-slate-100 font-bold border-b border-slate-400">
-                  <th className="p-1 text-center border-r border-slate-400 w-11">Kode</th>
-                  <th className="p-1 text-left border-r border-slate-400 w-36">Komponen / Sub</th>
-                  <th className="p-1 text-left border-r border-slate-400">Indikator Kinerja Kepala RA</th>
-                  <th className="p-1 text-left border-r border-slate-400 w-44">Bukti Fisik Diharapkan</th>
-                  <th className="p-1 text-center border-r border-slate-400 w-16">Kesiapan</th>
-                  <th className="p-1 text-center border-r border-slate-400 w-9">P1</th>
-                  <th className="p-1 text-center border-r border-slate-400 w-9">P2</th>
-                  <th className="p-1 text-center w-10">Rata2</th>
+                <tr className="bg-white font-bold border-b border-black">
+                  <th className="p-1 text-center border-r border-black w-11 bg-white">Kode</th>
+                  <th className="p-1 text-left border-r border-black w-36 bg-white">Komponen / Sub</th>
+                  <th className="p-1 text-left border-r border-black bg-white">Indikator Kinerja Kepala RA</th>
+                  <th className="p-1 text-left border-r border-black w-44 bg-white">Bukti Fisik Diharapkan</th>
+                  <th className="p-1 text-center border-r border-black w-16 bg-white">Kesiapan</th>
+                  <th className="p-1 text-center border-r border-black w-9 bg-white">P1</th>
+                  <th className="p-1 text-center border-r border-black w-9 bg-white">P2</th>
+                  <th className="p-1 text-center w-10 bg-white">Rata2</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-300">
+              <tbody className="divide-y divide-black">
                 {activeInds.map((ind) => {
                   const resp = responses[ind.id];
                   const linkedCount = evidenceFiles.filter((ev) => isEvidenceLinkedToIndicator(ev, ind.id)).length;
@@ -2563,22 +2646,22 @@ export const PrintView: React.FC<PrintViewProps> = ({
                   const avg = s1 && s2 ? ((s1 + s2) / 2).toFixed(1) : '-';
                   return (
                     <tr key={ind.id}>
-                      <td className="p-1 text-center border-r border-slate-300 font-mono font-bold">{ind.id}</td>
-                      <td className="p-1 border-r border-slate-300">
+                      <td className="p-1 text-center border-r border-black font-mono font-bold bg-white">{ind.id}</td>
+                      <td className="p-1 border-r border-black bg-white">
                         <span className="font-semibold block">{ind.komponenCode}</span>
-                        <span className="text-[8px] text-slate-600">{ind.subKomponenNama}</span>
+                        <span className="text-[8px] text-black">{ind.subKomponenNama}</span>
                       </td>
-                      <td className="p-1 border-r border-slate-300">{ind.indikatorNama}</td>
-                      <td className="p-1 border-r border-slate-300 text-[8px] text-slate-700">
+                      <td className="p-1 border-r border-black bg-white">{ind.indikatorNama}</td>
+                      <td className="p-1 border-r border-black text-[8px] text-black bg-white">
                         {ind.buktiWajib.join('; ')}
                       </td>
-                      <td className="p-1 text-center border-r border-slate-300 font-semibold">
+                      <td className="p-1 text-center border-r border-black font-semibold bg-white">
                         {resp?.completionStatus === 'complete' ? 'Siap' : resp?.completionStatus === 'draft' ? 'Draft' : 'Kosong'}
                         {linkedCount > 0 ? ` (${linkedCount})` : ''}
                       </td>
-                      <td className="p-1 text-center border-r border-slate-300 font-mono">{s1 || '-'}</td>
-                      <td className="p-1 text-center border-r border-slate-300 font-mono">{s2 || '-'}</td>
-                      <td className="p-1 text-center font-mono font-bold">{avg}</td>
+                      <td className="p-1 text-center border-r border-black font-mono bg-white">{s1 || '-'}</td>
+                      <td className="p-1 text-center border-r border-black font-mono bg-white">{s2 || '-'}</td>
+                      <td className="p-1 text-center font-mono font-bold bg-white">{avg}</td>
                     </tr>
                   );
                 })}
@@ -2591,55 +2674,55 @@ export const PrintView: React.FC<PrintViewProps> = ({
         {/* RINGKASAN MATRIKS 96 (STANDALONE TAB COMPATIBILITY)            */}
         {/* ============================================================== */}
         {activePrintTab === 'rekap_instrumen' && (
-          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs">
+          <div className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black">
             <KopSuratDinas variant="kemenag" />
 
-            <div className="text-center space-y-0.5">
-              <h2 className="text-sm font-black uppercase underline underline-offset-4 text-black">
+            <div className="text-center space-y-0.5 pb-2 border-b-2 border-[#008000]">
+              <h2 className="text-sm font-black uppercase text-black">
                 REKAPITULASI HASIL PENILAIAN KINERJA KEPALA RA (PKKM_v.26)
               </h2>
-              <p className="text-[10.5px] font-semibold text-slate-700">
+              <p className="text-[10.5px] font-semibold text-black">
                 {institution.namaLembaga} · {periodLabel || institution.periodePenilaian}
               </p>
             </div>
 
             {rekapV26.incompleteWarning && (
-              <div className="border border-amber-400 bg-amber-50 p-2 text-[10px] text-amber-950 font-semibold">
+              <div className="border border-black bg-white p-2 text-[10px] text-black font-semibold">
                 {rekapV26.incompleteWarning} (P1: {rekapV26.penilai1.scoredIndicators}/{rekapV26.penilai1.totalIndicators}, P2: {rekapV26.penilai2.scoredIndicators}/{rekapV26.penilai2.totalIndicators})
               </div>
             )}
 
-            <table className="w-full text-[10px] border border-slate-400 border-collapse tabular-nums">
+            <table className="w-full text-[10px] border border-black border-collapse tabular-nums bg-white">
               <thead>
-                <tr className="bg-slate-100 font-bold border-b border-slate-400">
-                  <th className="p-1.5 text-center border-r border-slate-400 w-8">No</th>
-                  <th className="p-1.5 text-left border-r border-slate-400">Komponen Utama PKKM_v.26</th>
-                  <th className="p-1.5 text-right border-r border-slate-400 w-20">Skor P1</th>
-                  <th className="p-1.5 text-right border-r border-slate-400 w-20">Skor P2</th>
-                  <th className="p-1.5 text-right w-24">Rata-rata</th>
+                <tr className="bg-white font-bold border-b border-black">
+                  <th className="p-1.5 text-center border-r border-black w-8 bg-white">No</th>
+                  <th className="p-1.5 text-left border-r border-black bg-white">Komponen Utama PKKM_v.26</th>
+                  <th className="p-1.5 text-right border-r border-black w-20 bg-white">Skor P1</th>
+                  <th className="p-1.5 text-right border-r border-black w-20 bg-white">Skor P2</th>
+                  <th className="p-1.5 text-right w-24 bg-white">Rata-rata</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-300">
+              <tbody className="divide-y divide-black">
                 {rekapV26.rataRataKomponen.map((row) => (
                   <tr key={row.komponenCode}>
-                    <td className="p-1.5 text-center border-r border-slate-300 font-mono">{row.komponenNomor}.</td>
-                    <td className="p-1.5 border-r border-slate-300 font-semibold">{row.komponenNama}</td>
-                    <td className="p-1.5 text-right border-r border-slate-300 font-mono">{row.p1Skor}</td>
-                    <td className="p-1.5 text-right border-r border-slate-300 font-mono">{row.p2Skor}</td>
-                    <td className="p-1.5 text-right font-mono font-bold">{row.rataSkor.toFixed(2)}</td>
+                    <td className="p-1.5 text-center border-r border-black font-mono bg-white">{row.komponenNomor}.</td>
+                    <td className="p-1.5 border-r border-black font-semibold bg-white">{row.komponenNama}</td>
+                    <td className="p-1.5 text-right border-r border-black font-mono bg-white">{row.p1Skor}</td>
+                    <td className="p-1.5 text-right border-r border-black font-mono bg-white">{row.p2Skor}</td>
+                    <td className="p-1.5 text-right font-mono font-bold bg-white">{row.rataSkor.toFixed(2)}</td>
                   </tr>
                 ))}
-                <tr className="bg-slate-50 font-bold">
-                  <td className="p-1.5 border-r border-slate-300" />
-                  <td className="p-1.5 border-r border-slate-300">Jumlah Skor Total (Maks. {rekapV26.penilai1.maxSkorTotal})</td>
-                  <td className="p-1.5 text-right border-r border-slate-300 font-mono">{rekapV26.penilai1.jumlahSkor}</td>
-                  <td className="p-1.5 text-right border-r border-slate-300 font-mono">{rekapV26.penilai2.jumlahSkor}</td>
-                  <td className="p-1.5 text-right font-mono">{rekapV26.jumlahSkorRataRata.toFixed(2)}</td>
+                <tr className="bg-white font-bold">
+                  <td className="p-1.5 border-r border-black bg-white" />
+                  <td className="p-1.5 border-r border-black bg-white">Jumlah Skor Total (Maks. {rekapV26.penilai1.maxSkorTotal})</td>
+                  <td className="p-1.5 text-right border-r border-black font-mono bg-white">{rekapV26.penilai1.jumlahSkor}</td>
+                  <td className="p-1.5 text-right border-r border-black font-mono bg-white">{rekapV26.penilai2.jumlahSkor}</td>
+                  <td className="p-1.5 text-right font-mono bg-white">{rekapV26.jumlahSkorRataRata.toFixed(2)}</td>
                 </tr>
-                <tr className="bg-emerald-50 font-black text-emerald-950">
-                  <td className="p-2 border-r border-slate-300" />
-                  <td className="p-2 border-r border-slate-300">Nilai Kinerja Tahunan (Skala 100) &amp; Predikat</td>
-                  <td colSpan={3} className="p-2 text-right font-mono text-xs">
+                <tr className="bg-white font-black text-black">
+                  <td className="p-2 border-r border-black bg-white" />
+                  <td className="p-2 border-r border-black bg-white">Nilai Kinerja Tahunan (Skala 100) &amp; Predikat</td>
+                  <td colSpan={3} className="p-2 text-right font-mono text-xs bg-white">
                     {rekapV26.isBothComplete && rekapV26.finalNilaiKinerjaTahunan !== null
                       ? `${rekapV26.finalNilaiKinerjaTahunan.toFixed(2)} — ${rekapV26.finalPredikat}`
                       : 'BELUM FINAL'}
@@ -2649,21 +2732,21 @@ export const PrintView: React.FC<PrintViewProps> = ({
             </table>
 
             <div>
-              <h3 className="font-bold text-slate-900 uppercase mb-1 text-[11px]">
+              <h3 className="font-bold text-black uppercase mb-1 text-[11px]">
                 Matriks Kesiapan Bukti &amp; Skor {activeInds.length} Indikator Instrumen
               </h3>
-              <table className="w-full text-[8.5px] border border-slate-400 border-collapse tabular-nums">
+              <table className="w-full text-[8.5px] border border-black border-collapse tabular-nums bg-white">
                 <thead>
-                  <tr className="bg-slate-100 font-bold border-b border-slate-400">
-                    <th className="p-1 text-center border-r border-slate-400 w-10">Kode</th>
-                    <th className="p-1 text-left border-r border-slate-400">Indikator Kinerja Kepala RA</th>
-                    <th className="p-1 text-center border-r border-slate-400 w-16">Kesiapan</th>
-                    <th className="p-1 text-center border-r border-slate-400 w-10">P1</th>
-                    <th className="p-1 text-center border-r border-slate-400 w-10">P2</th>
-                    <th className="p-1 text-center w-12">Rata2</th>
+                  <tr className="bg-white font-bold border-b border-black">
+                    <th className="p-1 text-center border-r border-black w-10 bg-white">Kode</th>
+                    <th className="p-1 text-left border-r border-black bg-white">Indikator Kinerja Kepala RA</th>
+                    <th className="p-1 text-center border-r border-black w-16 bg-white">Kesiapan</th>
+                    <th className="p-1 text-center border-r border-black w-10 bg-white">P1</th>
+                    <th className="p-1 text-center border-r border-black w-10 bg-white">P2</th>
+                    <th className="p-1 text-center w-12 bg-white">Rata2</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-300">
+                <tbody className="divide-y divide-black">
                   {activeInds.map((ind) => {
                     const resp = responses[ind.id];
                     const s1 = p1Scores[ind.id]?.score;
@@ -2671,18 +2754,18 @@ export const PrintView: React.FC<PrintViewProps> = ({
                     const avg = s1 && s2 ? ((s1 + s2) / 2).toFixed(1) : '-';
                     return (
                       <tr key={ind.id}>
-                        <td className="p-1 text-center border-r border-slate-300 font-mono font-bold">{ind.id}</td>
-                        <td className="p-1 border-r border-slate-300">{ind.indikatorNama}</td>
-                        <td className="p-1 text-center border-r border-slate-300 font-semibold">
+                        <td className="p-1 text-center border-r border-black font-mono font-bold bg-white">{ind.id}</td>
+                        <td className="p-1 border-r border-black bg-white">{ind.indikatorNama}</td>
+                        <td className="p-1 text-center border-r border-black font-semibold bg-white">
                           {resp?.completionStatus === 'complete'
                             ? 'Siap'
                             : resp?.completionStatus === 'draft'
                             ? 'Draft'
                             : 'Kosong'}
                         </td>
-                        <td className="p-1 text-center border-r border-slate-300 font-mono">{s1 || '-'}</td>
-                        <td className="p-1 text-center border-r border-slate-300 font-mono">{s2 || '-'}</td>
-                        <td className="p-1 text-center font-mono font-bold">{avg}</td>
+                        <td className="p-1 text-center border-r border-black font-mono bg-white">{s1 || '-'}</td>
+                        <td className="p-1 text-center border-r border-black font-mono bg-white">{s2 || '-'}</td>
+                        <td className="p-1 text-center font-mono font-bold bg-white">{avg}</td>
                       </tr>
                     );
                   })}
@@ -2699,14 +2782,14 @@ export const PrintView: React.FC<PrintViewProps> = ({
           photoChunks.map((chunk, pageIndex) => (
             <div
               key={pageIndex}
-              className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] flex flex-col justify-between"
+              className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] flex flex-col justify-between text-black"
             >
               <div>
-                <div className="border-b-2 border-emerald-950 pb-1 mb-3 flex items-center justify-between">
-                  <h2 className="text-xs font-bold uppercase text-emerald-950 tracking-wider">
+                <div className="border-b-2 border-[#008000] pb-1 mb-3 flex items-center justify-between">
+                  <h2 className="text-xs font-bold uppercase text-black tracking-wider">
                     LAMPIRAN DOKUMENTASI FOTO BUKTI FISIK KEGIATAN (LEMBAR {pageIndex + 1})
                   </h2>
-                  <span className="text-[10px] text-slate-500 font-mono">
+                  <span className="text-[10px] text-black font-mono">
                     Lembar Foto {pageIndex + 1} dari {photoChunks.length}
                   </span>
                 </div>
@@ -2714,21 +2797,21 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 {photoLayout === '2_per_page' ? (
                   <div className="space-y-4">
                     {chunk.map((photo, idx) => (
-                      <div key={photo.id} className="border border-slate-300 p-3 bg-white avoid-break">
-                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 mb-2">
-                          <span className="font-bold text-xs text-slate-900">
+                      <div key={photo.id} className="border border-black p-3 bg-white avoid-break">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-black mb-2">
+                          <span className="font-bold text-xs text-black">
                             {pageIndex * 2 + idx + 1}. {photo.judul}
                           </span>
-                          <span className="text-[10px] font-semibold text-emerald-900">
+                          <span className="text-[10px] font-semibold text-black">
                             {photo.kategori}{photo.tanggal ? ` · ${photo.tanggal}` : ''}
                           </span>
                         </div>
 
-                        <div className="h-56 w-full border border-slate-300 overflow-hidden bg-slate-50 mb-2 flex items-center justify-center p-1">
+                        <div className="h-56 w-full border border-black overflow-hidden bg-white mb-2 flex items-center justify-center p-1">
                           <img src={photo.fotoUrl} alt={photo.judul} className="max-h-full max-w-full object-contain" />
                         </div>
 
-                        <p className="text-[10px] text-slate-700 leading-snug">
+                        <p className="text-[10px] text-black leading-snug">
                           <strong>Keterangan Foto:</strong> {photo.deskripsi}
                         </p>
                       </div>
@@ -2737,21 +2820,21 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     {chunk.map((photo, idx) => (
-                      <div key={photo.id} className="border border-slate-300 p-2 bg-white avoid-break">
-                        <span className="font-bold text-[10px] text-slate-900 truncate block mb-1">
+                      <div key={photo.id} className="border border-black p-2 bg-white avoid-break">
+                        <span className="font-bold text-[10px] text-black truncate block mb-1">
                           {pageIndex * 4 + idx + 1}. {photo.judul}
                         </span>
-                        <div className="h-36 w-full border border-slate-300 overflow-hidden bg-slate-50 mb-1 flex items-center justify-center p-1">
+                        <div className="h-36 w-full border border-black overflow-hidden bg-white mb-1 flex items-center justify-center p-1">
                           <img src={photo.fotoUrl} alt={photo.judul} className="max-h-full max-w-full object-contain" />
                         </div>
-                        <p className="text-[9px] text-slate-700 line-clamp-2">{photo.deskripsi}</p>
+                        <p className="text-[9px] text-black line-clamp-2">{photo.deskripsi}</p>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="pt-3 border-t border-slate-200 text-[9.5px] text-slate-500 flex justify-between italic">
+              <div className="pt-3 border-t border-black text-[9.5px] text-black flex justify-between italic">
                 <span>Dokumen Portofolio Resmi {institution.namaLembaga}</span>
                 <span>Diverifikasi Tim Penilai PKKRA Kemenag {institution.kotaKab || '-'}</span>
               </div>
@@ -2766,20 +2849,20 @@ export const PrintView: React.FC<PrintViewProps> = ({
           generatedDocs.map((docItem, idx) => (
             <div
               key={docItem.docId}
-              className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs"
+              className="a4-sheet bg-white p-6 md:p-8 border border-slate-300 shadow-md mx-auto mb-8 max-w-[210mm] space-y-4 text-xs text-black"
             >
               <KopSuratDinas variant="yayasan" />
 
-              <div className="flex items-center justify-between text-[10px] text-slate-500 border-b border-slate-200 pb-1">
+              <div className="flex items-center justify-between text-[10px] text-black border-b border-black pb-1">
                 <span className="font-semibold uppercase">{docItem.category}</span>
                 <span className="font-mono">Berkas {idx + 1} / {generatedDocs.length}</span>
               </div>
 
-              <div className="text-center space-y-0.5 py-1">
-                <h2 className="text-sm font-black uppercase underline underline-offset-4 text-black">
+              <div className="text-center space-y-0.5 py-1 pb-2 border-b-2 border-[#008000]">
+                <h2 className="text-sm font-black uppercase text-black">
                   {docItem.title}
                 </h2>
-                <p className="text-[11px] font-mono text-slate-700">
+                <p className="text-[11px] font-mono text-black">
                   Nomor: {docItem.docNumber}
                 </p>
               </div>
@@ -2791,9 +2874,9 @@ export const PrintView: React.FC<PrintViewProps> = ({
               <div className="pt-6 flex justify-end avoid-break">
                 <div className="w-60 text-left text-xs">
                   <p>{evaluators.tempatPenilaian || '-'}, {currentDateStr}</p>
-                  <p className="font-bold text-slate-900">Kepala {institution.namaLembaga},</p>
-                  <p className="font-bold underline text-emerald-950 mt-12">{principal.namaLengkap || '-'}</p>
-                  <p className="text-[10px] font-mono text-slate-700">NUPTK: {principal.nuptk || '-'}</p>
+                  <p className="font-bold text-black">Kepala {institution.namaLembaga},</p>
+                  <p className="font-bold underline text-black mt-12">{principal.namaLengkap || '-'}</p>
+                  <p className="text-[10px] font-mono text-black">NUPTK: {principal.nuptk || '-'}</p>
                 </div>
               </div>
             </div>
