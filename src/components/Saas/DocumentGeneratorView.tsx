@@ -41,6 +41,7 @@ export const DocumentGeneratorView: React.FC<{
 
   const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>('ADMINISTRASI KELEMBAGAAN');
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [docNumber, setDocNumber] = useState('');
   const [category, setCategory] = useState<DocumentCategory>('ADMINISTRASI KELEMBAGAAN');
@@ -48,6 +49,8 @@ export const DocumentGeneratorView: React.FC<{
   const [docStatus, setDocStatus] = useState<'DRAFT' | 'APPROVED'>('DRAFT');
   const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+  const hasUnsavedManualEditRef = React.useRef(false);
+  const lastProfileRef = React.useRef(activeInstitution.profileData);
 
   const profileData = activeInstitution.profileData;
   const missingFields = useMemo(() => {
@@ -59,8 +62,13 @@ export const DocumentGeneratorView: React.FC<{
   }, [profileData]);
 
   useEffect(() => {
+    const profileChanged = lastProfileRef.current !== profileData;
+    lastProfileRef.current = profileData;
+
     if (preselectedIndicator) {
+      hasUnsavedManualEditRef.current = false;
       setSelectedDocId(null);
+      setSelectedTemplateId(null);
       setTitle(`Dokumen Pendukung Indikator ${preselectedIndicator.id}: ${preselectedIndicator.indikatorNama.slice(0, 60)}`);
       setDocNumber('[NOMOR DOKUMEN MENYUSUL]');
       setCategory(
@@ -74,39 +82,111 @@ export const DocumentGeneratorView: React.FC<{
       setBodyContent(
         `DOKUMEN PENDUKUNG INDIKATOR ${preselectedIndicator.id}\nKomponen: ${preselectedIndicator.komponenNama}\nSubkomponen: ${preselectedIndicator.subKomponenKode} ${preselectedIndicator.subKomponenNama}\n\nData Yang Diharapkan:\n${preselectedIndicator.dataDiharapkan}\n\nDaftar Bukti Fisik Wajib:\n${preselectedIndicator.buktiWajib.map((b, i) => `${i + 1}. ${b}`).join('\n')}\n\nUraian Pelaksanaan di ${profileData.institution.namaLembaga}:\n[Lengkapi uraian pelaksanaan kegiatan riil dan tanggal kegiatan di sini]`
       );
-    } else if (!selectedDocId && generatedDocs.length > 0 && !title) {
-      const firstDoc = generatedDocs[0];
-      setSelectedDocId(firstDoc.docId);
-      setTitle(firstDoc.title);
-      setCategory((firstDoc.category as DocumentCategory) || 'ADMINISTRASI KELEMBAGAAN');
-      setDocNumber(firstDoc.docNumber);
-      setBodyContent(firstDoc.bodyContent);
-      setDocStatus(firstDoc.status);
-    }
-  }, [preselectedIndicator, generatedDocs]);
-
-  const handleSelectTemplate = (tpl: DocumentTemplateDef) => {
-    const existingAuto = generatedDocs.find((d) => d.templateId === tpl.templateId);
-    if (existingAuto) {
-      handleLoadSavedDoc(existingAuto);
       return;
     }
+
+    if (hasUnsavedManualEditRef.current && !profileChanged) {
+      return;
+    }
+
+    const activeDoc =
+      (selectedDocId && generatedDocs.find((d) => d.docId === selectedDocId)) ||
+      (selectedTemplateId && generatedDocs.find((d) => d.templateId === selectedTemplateId)) ||
+      (!title && generatedDocs.length > 0 ? generatedDocs[0] : undefined);
+
+    const activeTplId = selectedTemplateId || activeDoc?.templateId || null;
+    const matchedTpl = activeTplId
+      ? DOCUMENT_TEMPLATES.find((t) => t.templateId === activeTplId)
+      : undefined;
+
+    if (matchedTpl) {
+      const fresh = buildTemplateDocumentContent(matchedTpl, profileData, activePeriod.yearLabel);
+      setSelectedDocId(activeDoc?.docId || `auto_${activePeriod.periodId}_${matchedTpl.templateId}`);
+      setSelectedTemplateId(matchedTpl.templateId);
+      setTitle(matchedTpl.title);
+      setCategory(matchedTpl.category);
+      setDocNumber(fresh.docNumber);
+      setBodyContent(fresh.bodyContent);
+      setDocStatus(activeDoc?.status || 'DRAFT');
+      hasUnsavedManualEditRef.current = false;
+    } else if (activeDoc && (!title || profileChanged)) {
+      setSelectedDocId(activeDoc.docId);
+      setSelectedTemplateId(activeDoc.templateId || null);
+      setTitle(activeDoc.title);
+      setCategory((activeDoc.category as DocumentCategory) || 'ADMINISTRASI KELEMBAGAAN');
+      setDocNumber(activeDoc.docNumber);
+      setBodyContent(activeDoc.bodyContent);
+      setDocStatus(activeDoc.status);
+      hasUnsavedManualEditRef.current = false;
+    }
+  }, [preselectedIndicator, generatedDocs, profileData, activePeriod.yearLabel, activePeriod.periodId]);
+
+  const handleSelectTemplate = (tpl: DocumentTemplateDef) => {
+    hasUnsavedManualEditRef.current = false;
+    const existingAuto = generatedDocs.find(
+      (d) =>
+        d.templateId === tpl.templateId ||
+        d.docId === `auto_${activePeriod.periodId}_${tpl.templateId}`
+    );
     const generated = buildTemplateDocumentContent(tpl, profileData, activePeriod.yearLabel);
-    setSelectedDocId(null);
+    setSelectedCategory(tpl.category);
+    setSelectedTemplateId(tpl.templateId);
+    setSelectedDocId(existingAuto?.docId || `auto_${activePeriod.periodId}_${tpl.templateId}`);
     setTitle(tpl.title);
     setCategory(tpl.category);
     setDocNumber(generated.docNumber);
-    setDocStatus('DRAFT');
+    setDocStatus(existingAuto?.status || 'DRAFT');
     setBodyContent(generated.bodyContent);
   };
 
   const handleLoadSavedDoc = (doc: GeneratedDocRecord) => {
+    hasUnsavedManualEditRef.current = false;
+    const matchedTpl = doc.templateId
+      ? DOCUMENT_TEMPLATES.find((t) => t.templateId === doc.templateId)
+      : undefined;
+    if (matchedTpl) {
+      const fresh = buildTemplateDocumentContent(matchedTpl, profileData, activePeriod.yearLabel);
+      setSelectedDocId(doc.docId);
+      setSelectedTemplateId(matchedTpl.templateId);
+      setSelectedCategory(matchedTpl.category);
+      setTitle(matchedTpl.title);
+      setCategory(matchedTpl.category);
+      setDocNumber(fresh.docNumber);
+      setBodyContent(fresh.bodyContent);
+      setDocStatus(doc.status);
+      return;
+    }
     setSelectedDocId(doc.docId);
+    setSelectedTemplateId(doc.templateId || null);
     setTitle(doc.title);
     setCategory((doc.category as DocumentCategory) || 'ADMINISTRASI KELEMBAGAAN');
     setDocNumber(doc.docNumber);
     setBodyContent(doc.bodyContent);
     setDocStatus(doc.status);
+  };
+
+  const handleReloadFromMaster = async () => {
+    const activeDoc = selectedDocId
+      ? generatedDocs.find((d) => d.docId === selectedDocId)
+      : undefined;
+    const tplId = selectedTemplateId || activeDoc?.templateId;
+    const matchedTpl = tplId
+      ? DOCUMENT_TEMPLATES.find((t) => t.templateId === tplId)
+      : undefined;
+
+    if (matchedTpl) {
+      const fresh = buildTemplateDocumentContent(matchedTpl, profileData, activePeriod.yearLabel);
+      hasUnsavedManualEditRef.current = false;
+      setTitle(matchedTpl.title);
+      setCategory(matchedTpl.category);
+      setDocNumber(fresh.docNumber);
+      setBodyContent(fresh.bodyContent);
+      setStatusMessage(`Naskah "${matchedTpl.title}" diperbarui mengikuti Data Master terbaru (${profileData.ptkList.length} PTK).`);
+      return;
+    }
+
+    await autoSyncAllNow(false);
+    setStatusMessage('Seluruh 27 dokumen diperbarui mengikuti Data Master terbaru.');
   };
 
   const handleGenerateWithAi = async () => {
@@ -147,6 +227,7 @@ export const DocumentGeneratorView: React.FC<{
       if (!resp.ok) throw new Error(json.error || 'Gagal menyusun draft AI.');
       setBodyContent(json.reply);
       setDocStatus('DRAFT');
+      hasUnsavedManualEditRef.current = true;
       setStatusMessage('Draft berhasil disusun AI (Status: DRAFT — silakan tinjau sebelum menyetujui).');
     } catch (err: any) {
       setStatusMessage(err?.message || 'Gagal menghubungi AI Assistant.');
@@ -161,17 +242,23 @@ export const DocumentGeneratorView: React.FC<{
       return;
     }
     const statusToSave: 'DRAFT' | 'APPROVED' = approve ? 'APPROVED' : docStatus;
-    const docId = selectedDocId || `doc_${Date.now()}`;
+    const docId =
+      selectedDocId ||
+      (selectedTemplateId
+        ? `auto_${activePeriod.periodId}_${selectedTemplateId}`
+        : `doc_${Date.now()}`);
     await saveGeneratedDoc({
       docId,
       institutionId: activeInstitution.institutionId,
       periodId: activePeriod.periodId,
+      templateId: selectedTemplateId || undefined,
       category,
       title: title.trim(),
       docNumber: docNumber.trim() || '[NOMOR MENYUSUL]',
       bodyContent,
       status: statusToSave,
     });
+    hasUnsavedManualEditRef.current = false;
     setSelectedDocId(docId);
     setDocStatus(statusToSave);
   };
@@ -196,102 +283,125 @@ export const DocumentGeneratorView: React.FC<{
   return (
     <div className="space-y-6">
       {/* Category Selector & Missing Data Check */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-bold text-slate-900">
-              Otomatisasi Dokumen Administrasi PKKM (Format A4)
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Pilih jenis dokumen dari 5 kategori. Sistem mengambil otomatis profil RA, Kepala RA, PTK, dan Penilai tanpa mengarang nomor surat atau tanggal fiktif.
-            </p>
+      <div className="bg-white border border-[#064e3b]/15 rounded-xl overflow-hidden shadow-xs">
+        <div className="h-1 bg-gradient-to-r from-[#064e3b] via-[#d4af37] to-[#064e3b]" />
+        <div className="p-6 space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h1 className="font-display text-xl font-bold text-[#064e3b]">
+                Otomatisasi Dokumen Administrasi PKKM (Format A4)
+              </h1>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Pilih jenis dokumen dari 5 kategori. Seluruh naskah (DRAFT &amp; APPROVED) otomatis diperbarui mengikuti Data Master lembaga, Kepala RA, daftar PTK ({profileData.ptkList.length} personil), dan Struktur Organisasi ({(profileData.structuralPositions || []).length} jabatan).
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {missingFields.length > 0 && (
+                <div className="px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                  Data belum lengkap: <strong>{missingFields.join(', ')}</strong>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => autoSyncAllNow(false)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#064e3b] bg-[#f1f6f3] hover:bg-[#e4efe8] border border-[#064e3b]/25 rounded-lg whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-[#047857]" />
+                <span>Sinkronisasi 27 Berkas</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMenu('laporan_pkkm')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#064e3b] hover:bg-[#043927] border border-[#d4af37]/40 rounded-lg whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+              >
+                <Printer className="w-3.5 h-3.5 text-[#f3d46b]" />
+                <span>Cetak Semua Berkas A4</span>
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {missingFields.length > 0 && (
-              <div className="px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                Data belum lengkap: <strong>{missingFields.join(', ')}</strong>
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => autoSyncAllNow(false)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Generate Otomatis 27 Berkas</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveMenu('laporan_pkkm')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Cetak Semua Berkas A4</span>
-            </button>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-slate-100 text-xs">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
+                  selectedCategory === cat
+                    ? 'bg-[#064e3b] text-[#f3d46b] border border-[#d4af37]/40'
+                    : 'bg-[#f1f5f2] text-slate-700 hover:text-[#064e3b]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
-        </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-slate-100 text-xs">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
-                selectedCategory === cat
-                  ? 'bg-emerald-700 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Template Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-          {DOCUMENT_TEMPLATES.filter((t) => t.category === selectedCategory).map((tpl) => (
-            <button
-              key={tpl.templateId}
-              type="button"
-              onClick={() => handleSelectTemplate(tpl)}
-              className="text-left p-3.5 rounded-lg border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition-colors space-y-1 cursor-pointer"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-bold text-slate-900">{tpl.title}</span>
-                <FileText className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-              </div>
-              <p className="text-[11px] text-slate-500 line-clamp-2">{tpl.description}</p>
-              <span className="text-[11px] font-mono text-emerald-700 block">
-                Indikator {tpl.relatedKomponen}
-              </span>
-            </button>
-          ))}
+          {/* Template Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+            {DOCUMENT_TEMPLATES.filter((t) => t.category === selectedCategory).map((tpl) => {
+              const isSelectedTpl = selectedTemplateId === tpl.templateId;
+              return (
+                <button
+                  key={tpl.templateId}
+                  type="button"
+                  onClick={() => handleSelectTemplate(tpl)}
+                  className={`text-left p-3.5 rounded-lg border transition-colors space-y-1 cursor-pointer ${
+                    isSelectedTpl
+                      ? 'border-[#b48a1e] bg-[#fdfaf0] ring-1 ring-[#d4af37]/40'
+                      : 'border-slate-200 hover:border-[#064e3b]/45 hover:bg-[#f7f8f5]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-[#064e3b]">{tpl.title}</span>
+                    <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelectedTpl ? 'text-[#9a7414]' : 'text-[#047857]'}`} />
+                  </div>
+                  <p className="text-[11px] text-slate-500 line-clamp-2">{tpl.description}</p>
+                  <span className="text-[11px] font-mono text-[#047857] block">
+                    Indikator {tpl.relatedKomponen}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Document Workbench (Editor + Saved List) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <h2 className="text-base font-bold text-slate-900">
-              Editor Draft Naskah Dinas ({docStatus})
-            </h2>
+        <div className="lg:col-span-2 bg-white border border-[#064e3b]/15 rounded-xl p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-[#064e3b]">
+                Editor Draft Naskah Dinas ({docStatus})
+              </h2>
+              <p className="text-[11px] text-slate-500 mt-0.5 tabular-nums">
+                Tersinkron otomatis dari Data Master · {profileData.ptkList.length} PTK · {(profileData.structuralPositions || []).length} Jabatan Struktural
+              </p>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleReloadFromMaster}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#6b4f09] bg-[#fdf8e8] hover:bg-[#f7ecc6] border border-[#d4af37]/70 rounded-lg whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-[#9a7414]" />
+                <span>Muat Ulang Data Master</span>
+              </button>
               <button
                 type="button"
                 onClick={handleGenerateWithAi}
                 disabled={isAiGenerating || !title}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#064e3b] bg-[#f1f6f3] hover:bg-[#e4efe8] border border-[#064e3b]/25 rounded-lg disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3.5 h-3.5 text-[#047857]" />
                 <span>{isAiGenerating ? 'Menyusun Draft...' : 'Sempurnakan via AI'}</span>
               </button>
               <button
                 type="button"
                 onClick={handlePrintPreview}
                 disabled={!bodyContent}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>Cetak A4</span>
@@ -305,7 +415,7 @@ export const DocumentGeneratorView: React.FC<{
                   )
                 }
                 disabled={!bodyContent}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Unduh DOCX</span>
@@ -319,9 +429,12 @@ export const DocumentGeneratorView: React.FC<{
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  hasUnsavedManualEditRef.current = true;
+                  setTitle(e.target.value);
+                }}
                 placeholder="Pilih template di atas atau ketik judul..."
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-emerald-600"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#047857]"
               />
             </div>
             <div>
@@ -329,23 +442,29 @@ export const DocumentGeneratorView: React.FC<{
               <input
                 type="text"
                 value={docNumber}
-                onChange={(e) => setDocNumber(e.target.value)}
+                onChange={(e) => {
+                  hasUnsavedManualEditRef.current = true;
+                  setDocNumber(e.target.value);
+                }}
                 placeholder="Contoh: 012/RA.DSF/SK/XI/2026"
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-emerald-600"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#047857]"
               />
             </div>
           </div>
 
           <div>
             <label className="text-xs font-semibold text-slate-700 block mb-1">
-              Isi Naskah Dokumen (Dapat diedit langsung)
+              Isi Naskah Dokumen (Otomatis Mengikuti Data Master · Dapat disesuaikan)
             </label>
             <textarea
               rows={16}
               value={bodyContent}
-              onChange={(e) => setBodyContent(e.target.value)}
+              onChange={(e) => {
+                hasUnsavedManualEditRef.current = true;
+                setBodyContent(e.target.value);
+              }}
               placeholder="Pilih salah satu template di atas untuk membuat draft otomatis dari data lembaga Anda..."
-              className="w-full px-3.5 py-2.5 text-xs font-mono leading-relaxed border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-emerald-600"
+              className="w-full px-3.5 py-2.5 text-xs font-mono leading-relaxed border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#047857]"
             />
           </div>
 
@@ -353,25 +472,25 @@ export const DocumentGeneratorView: React.FC<{
             <button
               type="button"
               onClick={() => handleSave(false)}
-              className="px-4 py-2 text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg whitespace-nowrap shrink-0 cursor-pointer transition-colors"
             >
               Simpan sebagai DRAFT
             </button>
             <button
               type="button"
               onClick={() => handleSave(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#064e3b] hover:bg-[#043927] border border-[#d4af37]/35 rounded-lg whitespace-nowrap shrink-0 cursor-pointer transition-colors"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#f3d46b]" />
               <span>Setujui Dokumen (APPROVED)</span>
             </button>
           </div>
         </div>
 
         {/* Saved Docs Archive for Current Period */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+        <div className="bg-white border border-[#064e3b]/15 rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 className="text-base font-bold text-slate-900">Arsip Dokumen Tersimpan</h2>
+            <h2 className="text-base font-bold text-[#064e3b]">Arsip Dokumen Tersimpan</h2>
             <span className="text-xs text-slate-500 tabular-nums">{generatedDocs.length} berkas</span>
           </div>
 
@@ -384,17 +503,17 @@ export const DocumentGeneratorView: React.FC<{
               {generatedDocs.map((doc) => (
                 <div
                   key={doc.docId}
-                  className={`p-3 rounded-lg border text-xs space-y-1.5 ${
+                  className={`p-3 rounded-lg border text-xs space-y-1.5 transition-colors ${
                     selectedDocId === doc.docId
-                      ? 'border-emerald-500 bg-emerald-50/40'
-                      : 'border-slate-200 bg-slate-50/50'
+                      ? 'border-[#b48a1e] bg-[#fdfaf0]'
+                      : 'border-slate-200 bg-[#f7f8f5]/60'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => handleLoadSavedDoc(doc)}
-                      className="text-left font-bold text-slate-900 hover:text-emerald-700 cursor-pointer"
+                      className="text-left font-bold text-slate-900 hover:text-[#064e3b] cursor-pointer"
                     >
                       {doc.title}
                     </button>
@@ -410,7 +529,7 @@ export const DocumentGeneratorView: React.FC<{
                   <div className="flex items-center gap-2 text-[11px] text-slate-500">
                     <span>{doc.category}</span>
                     <span aria-hidden="true">·</span>
-                    <span className={doc.status === 'APPROVED' ? 'text-emerald-700 font-semibold' : 'text-amber-700 font-semibold'}>
+                    <span className={doc.status === 'APPROVED' ? 'text-[#047857] font-semibold' : 'text-[#9a7414] font-semibold'}>
                       {doc.status}
                     </span>
                   </div>

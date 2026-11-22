@@ -3,13 +3,167 @@ import {
   DOCUMENT_TEMPLATES,
   MASTER_INDICATORS_V26,
 } from '../data/masterInstrumentV26';
-import { PpkmData } from '../types/ppkm';
+import { PpkmData, PtkItem, StructuralPosition } from '../types/ppkm';
 import {
   DocumentTemplateDef,
   EvidenceFileRecord,
   GeneratedDocRecord,
   IndicatorResponseRecord,
 } from '../types/saas';
+
+function normalizePersonName(name: string | undefined): string {
+  return (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+export function syncStructuralPositionsWithMasterData(
+  oldPtkList: PtkItem[],
+  newPtkList: PtkItem[],
+  currentPositions: StructuralPosition[],
+  options?: {
+    oldPrincipalName?: string;
+    newPrincipalName?: string;
+    oldKomiteName?: string;
+    newKomiteName?: string;
+  }
+): StructuralPosition[] {
+  const oldById = new Map(oldPtkList.map((p) => [p.id, p]));
+  const newById = new Map(newPtkList.map((p) => [p.id, p]));
+  const removedOld = oldPtkList.filter((o) => !newById.has(o.id));
+  const addedNew = newPtkList.filter((n) => !oldById.has(n.id));
+
+  // Pair 1-to-1 replacements by removal order when users delete & re-add a teacher
+  const replacementByOldId = new Map<string, PtkItem>();
+  const pairedNewIds = new Set<string>();
+  const pairCount = Math.min(removedOld.length, addedNew.length);
+  for (let i = 0; i < pairCount; i++) {
+    replacementByOldId.set(removedOld[i].id, addedNew[i]);
+    pairedNewIds.add(addedNew[i].id);
+  }
+
+  const oldPrincipalNorm = normalizePersonName(options?.oldPrincipalName);
+  const newPrincipalClean = (options?.newPrincipalName || '').trim();
+  const oldKomiteNorm = normalizePersonName(options?.oldKomiteName);
+  const newKomiteClean = (options?.newKomiteName || '').trim();
+
+  const updatedList: StructuralPosition[] = [];
+
+  for (const pos of currentPositions) {
+    const nextPos: StructuralPosition = { ...pos };
+
+    // 1. Sync Kepala RA / Komite names when principal or committee changes
+    if (
+      newPrincipalClean &&
+      ((oldPrincipalNorm && normalizePersonName(nextPos.nama) === oldPrincipalNorm) ||
+        (nextPos.tingkat === 'Pimpinan' &&
+          nextPos.jabatan.toLowerCase().includes('kepala ra') &&
+          !nextPos.ptkId))
+    ) {
+      nextPos.nama = newPrincipalClean;
+    }
+
+    if (
+      newKomiteClean &&
+      ((oldKomiteNorm && normalizePersonName(nextPos.nama) === oldKomiteNorm) ||
+        (nextPos.tingkat === 'Pimpinan' && nextPos.jabatan.toLowerCase().includes('komite')))
+    ) {
+      nextPos.nama = newKomiteClean;
+    }
+
+    // 2. Sync PTK link (by ptkId first, then fallback by matching old teacher name)
+    let matchedOldPtk: PtkItem | undefined = nextPos.ptkId ? oldById.get(nextPos.ptkId) : undefined;
+    if (!matchedOldPtk && nextPos.nama) {
+      const posNameNorm = normalizePersonName(nextPos.nama);
+      matchedOldPtk = oldPtkList.find((o) => normalizePersonName(o.nama) === posNameNorm);
+    }
+
+    if (matchedOldPtk) {
+      const matchedNew = newById.get(matchedOldPtk.id);
+      if (matchedNew) {
+        nextPos.ptkId = matchedNew.id;
+        nextPos.nama = matchedNew.nama;
+        if (
+          nextPos.tingkat === 'Guru' &&
+          matchedOldPtk.tugas &&
+          normalizePersonName(nextPos.jabatan) === normalizePersonName(matchedOldPtk.tugas) &&
+          matchedNew.tugas
+        ) {
+          nextPos.jabatan = matchedNew.tugas;
+        }
+        updatedList.push(nextPos);
+        continue;
+      }
+
+      // Teacher was removed: apply 1-to-1 replacement if available, else prune Guru slot or clear name
+      const replacement = replacementByOldId.get(matchedOldPtk.id);
+      if (replacement) {
+        nextPos.ptkId = replacement.id;
+        nextPos.nama = replacement.nama;
+        if (nextPos.tingkat === 'Guru' && replacement.tugas) {
+          nextPos.jabatan = replacement.tugas;
+        }
+        updatedList.push(nextPos);
+        continue;
+      }
+
+      if (nextPos.tingkat === 'Guru') {
+        continue;
+      }
+
+      delete nextPos.ptkId;
+      nextPos.nama = '[Belum Ditentukan]';
+      updatedList.push(nextPos);
+      continue;
+    }
+
+    // 3. If pos has ptkId that already exists in newPtkList directly
+    if (nextPos.ptkId && newById.has(nextPos.ptkId)) {
+      const directNew = newById.get(nextPos.ptkId)!;
+      nextPos.nama = directNew.nama;
+      updatedList.push(nextPos);
+      continue;
+    }
+
+    // 4. Opportunistic link to a matching current PTK name for future edits
+    const directByName = newPtkList.find(
+      (n) => normalizePersonName(n.nama) === normalizePersonName(nextPos.nama)
+    );
+    if (directByName) {
+      nextPos.ptkId = directByName.id;
+    }
+    updatedList.push(nextPos);
+  }
+
+  // 5. Append newly added unpaired teachers so new teachers also appear in Struktur Organisasi
+  const existingPtkIds = new Set(updatedList.map((p) => p.ptkId).filter(Boolean));
+  const existingNamesNorm = new Set(updatedList.map((p) => normalizePersonName(p.nama)));
+  const principalNorm = normalizePersonName(newPrincipalClean || options?.oldPrincipalName);
+
+  for (const newTeacher of addedNew) {
+    if (pairedNewIds.has(newTeacher.id)) continue;
+    const teacherNameNorm = normalizePersonName(newTeacher.nama);
+    if (!teacherNameNorm) continue;
+    if (existingPtkIds.has(newTeacher.id) || existingNamesNorm.has(teacherNameNorm)) continue;
+    if (principalNorm && teacherNameNorm === principalNorm && updatedList.some((p) => p.tingkat === 'Pimpinan')) {
+      continue;
+    }
+    updatedList.push({
+      id: `st_ptk_${newTeacher.id}`,
+      ptkId: newTeacher.id,
+      jabatan: newTeacher.tugas || 'Guru Kelas',
+      nama: newTeacher.nama,
+      tingkat: 'Guru',
+      keterangan: `${newTeacher.statusPegawai} · ${newTeacher.pendidikanTerakhir}`,
+      urutan: updatedList.length + 1,
+    });
+    existingPtkIds.add(newTeacher.id);
+    existingNamesNorm.add(teacherNameNorm);
+  }
+
+  return updatedList.map((item, idx) => ({
+    ...item,
+    urutan: idx + 1,
+  }));
+}
 
 function mergeAdminDocs(data: PpkmData) {
   return {
@@ -369,23 +523,28 @@ export function buildAllGeneratedDocsFromProfile(
   yearLabel: string,
   createdBy: string,
   existingDocs: GeneratedDocRecord[] = [],
-  forceOverwriteApproved = false
+  resetApprovedToDraft = false
 ): GeneratedDocRecord[] {
-  const existingMap = new Map<string, GeneratedDocRecord>();
+  const existingByDocId = new Map<string, GeneratedDocRecord>();
+  const existingByTemplateId = new Map<string, GeneratedDocRecord>();
   for (const d of existingDocs) {
     if (d.institutionId === institutionId && d.periodId === periodId) {
-      existingMap.set(d.docId, d);
+      existingByDocId.set(d.docId, d);
+      if (d.templateId && !existingByTemplateId.has(d.templateId)) {
+        existingByTemplateId.set(d.templateId, d);
+      }
     }
   }
 
+  const templateMap = new Map(DOCUMENT_TEMPLATES.map((t) => [t.templateId, t]));
   const nowIso = new Date().toISOString();
   const autoDocs: GeneratedDocRecord[] = DOCUMENT_TEMPLATES.map((tpl) => {
     const autoDocId = `auto_${periodId}_${tpl.templateId}`;
-    const existing = existingMap.get(autoDocId);
-    if (existing && existing.status === 'APPROVED' && !forceOverwriteApproved) {
-      return existing;
-    }
+    const existing = existingByDocId.get(autoDocId) || existingByTemplateId.get(tpl.templateId);
     const { docNumber, bodyContent } = buildTemplateDocumentContent(tpl, data, yearLabel);
+    const nextStatus: 'DRAFT' | 'APPROVED' = resetApprovedToDraft
+      ? 'DRAFT'
+      : existing?.status || 'DRAFT';
     return {
       docId: autoDocId,
       institutionId,
@@ -395,7 +554,7 @@ export function buildAllGeneratedDocsFromProfile(
       title: tpl.title,
       docNumber,
       bodyContent,
-      status: existing?.status || 'DRAFT',
+      status: nextStatus,
       createdBy: existing?.createdBy || createdBy,
       authorizedUids: existing?.authorizedUids || [createdBy],
       createdAt: existing?.createdAt || nowIso,
@@ -403,12 +562,29 @@ export function buildAllGeneratedDocsFromProfile(
     };
   });
 
-  const customDocs = existingDocs.filter(
-    (d) =>
-      d.institutionId === institutionId &&
-      d.periodId === periodId &&
-      !d.docId.startsWith(`auto_${periodId}_`)
-  );
+  const customDocs = existingDocs
+    .filter(
+      (d) =>
+        d.institutionId === institutionId &&
+        d.periodId === periodId &&
+        !d.docId.startsWith(`auto_${periodId}_`)
+    )
+    .map((d) => {
+      if (d.templateId && templateMap.has(d.templateId)) {
+        const tpl = templateMap.get(d.templateId)!;
+        const { docNumber, bodyContent } = buildTemplateDocumentContent(tpl, data, yearLabel);
+        return {
+          ...d,
+          title: tpl.title,
+          category: tpl.category,
+          docNumber,
+          bodyContent,
+          status: resetApprovedToDraft ? ('DRAFT' as const) : d.status,
+          updatedAt: nowIso,
+        };
+      }
+      return d;
+    });
 
   return [...autoDocs, ...customDocs];
 }

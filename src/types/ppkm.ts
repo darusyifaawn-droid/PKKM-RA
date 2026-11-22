@@ -239,6 +239,7 @@ export interface AssessmentIndicator {
 
 export interface StructuralPosition {
   id: string;
+  ptkId?: string;
   jabatan: string;
   nama: string;
   tingkat: 'Pimpinan' | 'Manajemen' | 'Seksi' | 'Guru' | 'Staf/Layanan';

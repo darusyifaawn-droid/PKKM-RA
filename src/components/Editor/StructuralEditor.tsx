@@ -183,16 +183,20 @@ export const StructuralEditor: React.FC<StructuralEditorProps> = ({
                 <label className="block font-medium text-slate-700">Nama Pejabat</label>
                 {/* Quick picker from PTK */}
                 <select
+                  value=""
                   onChange={(e) => {
                     if (e.target.value) {
-                      setFormState({ ...formState, nama: e.target.value });
+                      const matched = ptkList.find((p) => p.id === e.target.value);
+                      if (matched) {
+                        setFormState({ ...formState, nama: matched.nama, ptkId: matched.id });
+                      }
                     }
                   }}
                   className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xs px-1 cursor-pointer"
                 >
                   <option value="">Pilih dari PTK...</option>
                   {ptkList.map((ptk) => (
-                    <option key={ptk.id} value={ptk.nama}>
+                    <option key={ptk.id} value={ptk.id}>
                       {ptk.nama}
                     </option>
                   ))}
@@ -201,7 +205,13 @@ export const StructuralEditor: React.FC<StructuralEditorProps> = ({
               <input
                 type="text"
                 value={formState.nama}
-                onChange={(e) => setFormState({ ...formState, nama: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const matched = ptkList.find(
+                    (p) => p.nama.trim().toLowerCase() === val.trim().toLowerCase()
+                  );
+                  setFormState({ ...formState, nama: val, ptkId: matched?.id });
+                }}
                 className="w-full px-3 py-1.5 border border-slate-300 rounded-md bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 font-medium"
                 placeholder="Nama pejabat atau dewan guru"
               />

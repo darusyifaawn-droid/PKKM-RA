@@ -55,6 +55,7 @@ import {
 import {
   buildAllGeneratedDocsFromProfile,
   buildAutoIndicatorResponses,
+  syncStructuralPositionsWithMasterData,
 } from '../utils/autoPopulatePkkm';
 import { parseInstrumentCsv } from '../utils/csvInstrumentImporter';
 import { parseInstrumentUploadFile } from '../utils/excelWorkbookImporter';
@@ -454,22 +455,19 @@ function hydrateMissingAutoArtifacts(base: PersistedLocalStore): PersistedLocalS
     const inst = base.institutions.find((i) => i.institutionId === period.institutionId);
     if (!inst) continue;
 
-    // Only auto-hydrate full artifacts for Darusyifa preset or institutions that have backing data;
-    // clean tenants get blank DRAFT docs only when generated, keeping indicator status accurate ('empty' when no data).
-    const existingPeriodDocs = generatedDocs.filter(
-      (d) => d.institutionId === inst.institutionId && d.periodId === period.periodId
+    // Always synchronize template-backed documents with latest Data Master (preserving DRAFT/APPROVED status)
+    const syncedPeriodDocs = buildAllGeneratedDocsFromProfile(
+      inst.institutionId,
+      period.periodId,
+      inst.profileData,
+      period.yearLabel,
+      'system-auto',
+      generatedDocs
     );
-    if (existingPeriodDocs.length === 0) {
-      const autoDocs = buildAllGeneratedDocsFromProfile(
-        inst.institutionId,
-        period.periodId,
-        inst.profileData,
-        period.yearLabel,
-        'system-auto',
-        []
-      );
-      generatedDocs = [...generatedDocs, ...autoDocs];
-    }
+    const remainingDocs = generatedDocs.filter(
+      (d) => !(d.institutionId === inst.institutionId && d.periodId === period.periodId)
+    );
+    generatedDocs = [...syncedPeriodDocs, ...remainingDocs];
 
     const existingPeriodResponses = responses[period.periodId] || {};
     if (Object.keys(existingPeriodResponses).length === 0) {
@@ -951,23 +949,45 @@ export const SaasProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const cloudInstitutions = snapshot.docs.map((d) => d.data() as InstitutionTenant);
         setCloudInstitutionsLoaded(true);
         setStore((prev) => {
-          if (isSuper) {
-            const merged = [...cloudInstitutions];
-            for (const localInst of prev.institutions) {
-              if (!merged.find((m) => m.institutionId === localInst.institutionId)) {
-                merged.push(localInst);
-              }
-            }
-            return { ...prev, institutions: merged };
-          }
-          // Non-Super Admin strictly sees ONLY cloud institutions they belong to (zero cross-tenant leak)
-          const validActive = cloudInstitutions.some((i) => i.institutionId === prev.activeInstitutionId)
+          const nextInstitutions = isSuper
+            ? [
+                ...cloudInstitutions,
+                ...prev.institutions.filter(
+                  (localInst) =>
+                    !cloudInstitutions.some((m) => m.institutionId === localInst.institutionId)
+                ),
+              ]
+            : cloudInstitutions;
+
+          const validActive = isSuper
             ? prev.activeInstitutionId
-            : cloudInstitutions[0]?.institutionId || 'onboarding-ra';
+            : nextInstitutions.some((i) => i.institutionId === prev.activeInstitutionId)
+            ? prev.activeInstitutionId
+            : nextInstitutions[0]?.institutionId || 'onboarding-ra';
+
+          let refreshedDocs = prev.generatedDocs;
+          for (const period of prev.periods) {
+            const inst = nextInstitutions.find((i) => i.institutionId === period.institutionId);
+            if (!inst) continue;
+            const periodSynced = buildAllGeneratedDocsFromProfile(
+              inst.institutionId,
+              period.periodId,
+              inst.profileData,
+              period.yearLabel,
+              uid,
+              refreshedDocs
+            );
+            const others = refreshedDocs.filter(
+              (d) => !(d.institutionId === inst.institutionId && d.periodId === period.periodId)
+            );
+            refreshedDocs = [...periodSynced, ...others];
+          }
+
           return {
             ...prev,
-            institutions: cloudInstitutions,
+            institutions: nextInstitutions,
             activeInstitutionId: validActive,
+            generatedDocs: refreshedDocs,
           };
         });
       },
@@ -1207,7 +1227,20 @@ export const SaasProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (snapshot.empty) return;
         const cloudDocs = snapshot.docs.map((d) => d.data() as GeneratedDocRecord);
         setStore((prev) => {
+          const currentInst = prev.institutions.find((i) => i.institutionId === instId);
+          const currentPeriod = prev.periods.find((p) => p.periodId === periodId);
           const others = prev.generatedDocs.filter((d) => d.periodId !== periodId);
+          if (currentInst && currentPeriod) {
+            const refreshedCloudDocs = buildAllGeneratedDocsFromProfile(
+              currentInst.institutionId,
+              currentPeriod.periodId,
+              currentInst.profileData,
+              currentPeriod.yearLabel,
+              uid,
+              cloudDocs
+            );
+            return { ...prev, generatedDocs: [...refreshedCloudDocs, ...others] };
+          }
           return { ...prev, generatedDocs: [...cloudDocs, ...others] };
         });
       },
@@ -1574,7 +1607,26 @@ export const SaasProvider: React.FC<{ children: React.ReactNode }> = ({ children
         prev.periods.find((p) => p.periodId === prev.activePeriodId) || activePeriod;
       const updatedList = prev.institutions.map((inst) => {
         if (inst.institutionId !== activeInstitution.institutionId) return inst;
-        const nextProfile = updater(inst.profileData);
+        const rawNextProfile = updater(inst.profileData);
+        const callerManuallyChangedStructure =
+          rawNextProfile.structuralPositions !== inst.profileData.structuralPositions;
+        const syncedPositions = callerManuallyChangedStructure
+          ? rawNextProfile.structuralPositions
+          : syncStructuralPositionsWithMasterData(
+              inst.profileData.ptkList || [],
+              rawNextProfile.ptkList || [],
+              rawNextProfile.structuralPositions || [],
+              {
+                oldPrincipalName: inst.profileData.principal?.namaLengkap,
+                newPrincipalName: rawNextProfile.principal?.namaLengkap,
+                oldKomiteName: inst.profileData.evaluators?.komiteNama,
+                newKomiteName: rawNextProfile.evaluators?.komiteNama,
+              }
+            );
+        const nextProfile = {
+          ...rawNextProfile,
+          structuralPositions: syncedPositions,
+        };
         nextInst = {
           ...inst,
           name: nextProfile.institution.namaLembaga,
